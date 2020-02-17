@@ -1,8 +1,5 @@
-//===============================================================================
-//
 // Microsoft Press
 // C++ AMP: Accelerated Massive Parallelism with Microsoft Visual C++
-//
 //===============================================================================
 // Copyright (c) 2012-2013 Ade Miller & Kate Gregory.  All rights reserved.
 // This code released under the terms of the 
@@ -13,7 +10,6 @@
 // THE IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A
 // PARTICULAR PURPOSE.
 //===============================================================================
-
 #include <memory>
 #include <string>
 #include <deque>
@@ -47,12 +43,8 @@ enum ComputeType{
 	kMultiTile128,
 	kMultiTile256,
 	kMultiTile512
-};
-
-//--------------------------------------------------------------------------------------
+};//--------------------------------------------------------------------------------------
 // Global constants.
-//--------------------------------------------------------------------------------------
-
 const float g_softeningSquared = 0.0000015625f;
 const float g_dampingFactor = 0.9995f;
 const float g_particleMass = ((6.67300e-11f * 10000.0f) * 10000.0f * 10000.0f);
@@ -63,11 +55,8 @@ const int g_particleNumStepSize = 512;  // Number of particles added for each sl
 const int g_particleNumStepSizeMy = 512;  // Number of particles added for each slider tick, cannot be less than the max tile size.
 
 const float g_Spread = 400.0f;          // Separation between the two clusters.
-
 //--------------------------------------------------------------------------------------
 // Global variables
-//--------------------------------------------------------------------------------------
-
 CDXUTDialogResourceManager          g_dialogResourceManager;    // manager for shared resources of dialogs
 CModelViewerCamera                  g_camera;                   // A model viewing camera
 CD3DSettingsDlg                     g_d3dSettingsDlg;           // Device settings dialog
@@ -100,7 +89,6 @@ CComPtr<ID3D11ShaderResourceView>   g_pShaderResView;
 //--------------------------------------------------------------------------------------
 // Nbody functionality 
 //--------------------------------------------------------------------------------------
-
 #if !(defined(DEBUG) || defined(_DEBUG))
 int                                 g_numParticles = (20 * 1024);           // The current number of particles in the n-body simulation
 int                                 g_numParticlesMy = (20 * 1024);
@@ -114,17 +102,13 @@ std::shared_ptr<INBodyAmp>          g_pNBody;                               // T
 std::shared_ptr<INBodyAmpMy>        g_pNBodyMy;                             // The current integrator
 
 //  Particle data structures.
-
 std::vector<std::shared_ptr<TaskData>> g_deviceData;
 
 //  Particle colours.
 D3DXCOLOR                           g_particleColor;
 std::vector<D3DCOLOR>               g_particleColors;
-
 //--------------------------------------------------------------------------------------
 // UI control IDs
-//--------------------------------------------------------------------------------------
-
 #define IDC_TOGGLEFULLSCREEN        1
 #define IDC_TOGGLEREF               3
 #define IDC_CHANGEDEVICE            4
@@ -135,11 +119,8 @@ std::vector<D3DCOLOR>               g_particleColors;
 #define IDC_NBODIES_SLIDER          8
 #define IDC_NBODIES_TEXT            9
 #define IDC_FPS_TEXT                10
-
 //--------------------------------------------------------------------------------------
 // Forward declarations 
-//--------------------------------------------------------------------------------------
-
 bool CALLBACK ModifyDeviceSettings(DXUTDeviceSettings* pDeviceSettings, void* pUserContext);
 void CALLBACK OnFrameMove(double fTime, float fElapsedTime, void* pUserContext);
 LRESULT CALLBACK MsgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, bool* pbNoFurtherProcessing,
@@ -159,16 +140,13 @@ void CALLBACK OnD3D11FrameRender(ID3D11Device* pd3dDevice, ID3D11DeviceContext* 
 								 float fElapsedTime, void* pUserContext);
 void InitApp();
 void RenderText();
-
 //--------------------------------------------------------------------------------------
 // Helper function to compile an hlsl shader from file, 
 // its binary compiled code is returned
-//--------------------------------------------------------------------------------------
-
 HRESULT CompileShaderFromFile(WCHAR* szFileName, LPCSTR szEntryPoint, LPCSTR szShaderModel, ID3DBlob** ppBlobOut){
 	HRESULT hr = S_OK;
 
-	WCHAR str[MAX_PATH];
+	WCHAR str[MAX_PATH] = {};
 	V_RETURN(DXUTFindDXSDKMediaFileCch(str, MAX_PATH, szFileName));
 
 	CComPtr<ID3DBlob> pErrorBlob = nullptr;
@@ -177,15 +155,11 @@ HRESULT CompileShaderFromFile(WCHAR* szFileName, LPCSTR szEntryPoint, LPCSTR szS
 		if(pErrorBlob != nullptr)
 			OutputDebugStringA((char*)pErrorBlob->GetBufferPointer());
 	}
-
 	return hr;
-}
-
-//--------------------------------------------------------------------------------------
+}//--------------------------------------------------------------------------------------
 // Entry point to the program. Initializes everything and goes into a message processing 
 // loop. Idle time is used to render the scene.
 //--------------------------------------------------------------------------------------
-
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow){
 	// NOTE: This application leaks memory on shutdown due DLL unload ordering issues.
 	//
@@ -219,14 +193,9 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 	DXUTCreateWindow(L"C++ AMP N-Body Simulation Demo");
 	DXUTCreateDevice(D3D_FEATURE_LEVEL_11_0, true, 1280, 800);
 	DXUTMainLoop();                      // Enter into the DXUT render loop
-
 	return DXUTGetExitCode();
-}
-
-//--------------------------------------------------------------------------------------
+}//--------------------------------------------------------------------------------------
 // Initialize the app 
-//--------------------------------------------------------------------------------------
-
 void InitApp(){
 	g_d3dSettingsDlg.Init(&g_dialogResourceManager);
 	g_HUD.Init(&g_dialogResourceManager);
@@ -246,9 +215,7 @@ void InitApp(){
 	g_HUD.AddComboBox(IDC_COMPUTETYPECOMBO, -133, y += 34, 300, 26, L'G', false, &pComboBox);
 
 	// The ordering of these names must match the FrameProcessorType enumeration.
-
-	std::wstring processorNames[] =
-	{
+	std::wstring processorNames[] =	{
 		std::wstring(L"C++ AMP Simple Model "),                // kCpuSingle
 		std::wstring(L"C++ AMP Tiled Model 64 "),
 		std::wstring(L"C++ AMP Tiled Model 128 "),
@@ -259,7 +226,6 @@ void InitApp(){
 		std::wstring(L"C++ AMP Tiled Model 256:xx GPUs"),
 		std::wstring(L"C++ AMP Tiled Model 512:xx GPUs")       // kMultiTile512
 	};
-
 	WCHAR buf[3];
 	if(_itow_s(static_cast<int>(AmpUtils::GetGpuAccelerators().size()), buf, 3, 10) == 0)
 		for(int i = kMultiTile64; i <= kMultiTile512; ++i)
@@ -268,19 +234,16 @@ void InitApp(){
 
 	//  If there is a GPU accelerator then use it. 
 	//  Otherwise add a REF accelerator and display warning.
-
 	for(int i = kSingleSimple; i <= kSingleTile512; ++i)
 		pComboBox->AddItem(processorNames[i].c_str(), nullptr);
 	g_eComputeType = kSingleTile256;
 
 	//  If there us more than one GPU then allow the user to use them together.
-
 	if(AmpUtils::GetGpuAccelerators().size() >= 2){
 		for(int i = kMultiTile64; i <= kMultiTile512; ++i)
 			pComboBox->AddItem(processorNames[i].c_str(), nullptr);
 		g_eComputeType = kMultiTile256;
 	}
-
 	g_HUD.GetComboBox(IDC_COMPUTETYPECOMBO)->SetSelectedByData((void*)g_eComputeType);
 	pComboBox->SetSelectedByIndex(g_eComputeType);
 
@@ -306,18 +269,13 @@ void InitApp(){
 				   L"No C++ AMP Hardware Accelerator Detected",
 				   MB_ICONEXCLAMATION);
 #endif
-
 #ifdef FORCE_WARP
 	//  Force use of the Warp accelerator, even if a better GPU exists. For testing only.
 	accelerator::set_default(accelerator::direct3d_warp);
 	OutputDebugStringW(L"Forcing application to use the WARP accelerator");
 #endif
-}
-
-//--------------------------------------------------------------------------------------
+}//--------------------------------------------------------------------------------------
 //  Create particle buffers for use during rendering.
-//--------------------------------------------------------------------------------------
-
 HRESULT CreateParticleBuffer(ID3D11Device* pd3dDevice){
 	HRESULT hr = S_OK;
 
@@ -340,11 +298,8 @@ HRESULT CreateParticleBuffer(ID3D11Device* pd3dDevice){
 	V_RETURN(pd3dDevice->CreateBuffer(&bufferDesc, &resourceData, &g_pParticleBuffer));
 
 	return hr;
-}
-
-//--------------------------------------------------------------------------------------
+}//--------------------------------------------------------------------------------------
 //  Load particles. Two clusters set to collide.
-//--------------------------------------------------------------------------------------
 void LoadParticles(){
 	const float centerSpread = g_Spread * 0.50f;
 
@@ -390,9 +345,7 @@ void LoadParticlesMy(int_3 sizies){
 	//	copy(particles.vel.begin(), velView);
 	//}
 } // ///////////////////////////////////////////////////////////////////////////////////////
-//--------------------------------------------------------------------------------------
 //  Integrator class factory. 
-//--------------------------------------------------------------------------------------
 std::shared_ptr<INBodyAmp> NBodyFactory(ComputeType type){
 	switch(type){
 	case kSingleSimple:
@@ -436,12 +389,8 @@ std::shared_ptr<INBodyAmp> NBodyFactory(ComputeType type){
 		return nullptr;
 		break;
 	}
-}
-
-//--------------------------------------------------------------------------------------
+}//--------------------------------------------------------------------------------------
 //  Create buffers and hook them up to DirectX.
-//--------------------------------------------------------------------------------------
-
 HRESULT CreateParticlePosBuffer(ID3D11Device* pd3dDevice){
 	HRESULT hr = S_OK;
 	accelerator_view renderView =
@@ -488,14 +437,9 @@ HRESULT CreateParticlePosBuffer(ID3D11Device* pd3dDevice){
 	V_RETURN(hr);
 	hr = pd3dDevice->CreateUnorderedAccessView(g_pParticlePosNew, &viewDesc, &g_pParticlePosUavNew);
 	V_RETURN(hr);
-
 	return hr;
-}
-
-//--------------------------------------------------------------------------------------
+}//--------------------------------------------------------------------------------------
 //  Create render buffer. 
-//--------------------------------------------------------------------------------------
-
 bool CALLBACK ModifyDeviceSettings(DXUTDeviceSettings* pDeviceSettings, void* pUserContext){
 	assert(pDeviceSettings->ver == DXUT_D3D11_DEVICE);
 
@@ -513,20 +457,15 @@ bool CALLBACK ModifyDeviceSettings(DXUTDeviceSettings* pDeviceSettings, void* pU
 			DXUTDisplaySwitchingToREFWarning(pDeviceSettings->ver);
 		}
 	}
-
 	return true;
-}
-
-//--------------------------------------------------------------------------------------
+}//--------------------------------------------------------------------------------------
 // This callback function will be called once at the beginning of every frame. This is the
 // best location for your application to handle updates to the scene, but is not 
 // intended to contain actual rendering calls, which should instead be placed in the 
 // OnFrameRender callback.  
-//--------------------------------------------------------------------------------------
-
 void CALLBACK OnFrameMove(double fTime, float fElapsedTime, void* pUserContext){
 	g_pNBody->Integrate(g_deviceData, g_numParticles);
-	g_pNBodyMy->Integrate(g_deviceData, g_numParticles, g_Sizies);
+	//g_pNBodyMy->Integrate(g_deviceData, g_numParticles, g_Sizies);
 	std::for_each(g_deviceData.begin(), g_deviceData.end(), [](std::shared_ptr<TaskData>& t){
 		std::swap(t->DataOld, t->DataNew);
 	});
@@ -536,14 +475,10 @@ void CALLBACK OnFrameMove(double fTime, float fElapsedTime, void* pUserContext){
 
 	// Update the camera's position based on user input 
 	g_camera.FrameMove(fElapsedTime);
-}
-
-//--------------------------------------------------------------------------------------
+}//--------------------------------------------------------------------------------------
 // Before handling window messages, DXUT passes incoming windows 
 // messages to the application through this callback function. If the application sets 
 // *pbNoFurtherProcessing to TRUE, then DXUT will not process this message.
-//--------------------------------------------------------------------------------------
-
 LRESULT CALLBACK MsgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, bool* pbNoFurtherProcessing,
 						 void* pUserContext){
 	// Pass messages to dialog resource manager calls so GUI state is updated correctly
@@ -612,39 +547,30 @@ void CALLBACK OnGUIEvent(UINT nEvent, int nControlID, CDXUTControl* pControl, vo
 	}
 	break;
 	}
-}
-
+} // ///////////////////////////////////////////////////////////////////////////////////////////////////////
 // For the multi-accelerator integrator there must be at least one tile of particles per GPU.
-
 void CorrectNumberOfParticles(){
 	const int minParticles = static_cast<int>(g_deviceData.size() * g_pNBody->TileSize());
-
 	if((g_eComputeType >= kMultiTile) && (g_numParticles < minParticles)){
 		g_numParticles = minParticles;
 		g_HUD.GetSlider(IDC_NBODIES_SLIDER)->SetValue(g_numParticles / g_particleNumStepSize);
 	}
-}
-
+} // ///////////////////////////////////////////////////////////////////////////////////////////////
 void SetBodyText(){
 	WCHAR szTemp[256];
 	swprintf_s(szTemp, L"Bodies: %d", g_numParticles);
 	g_HUD.GetStatic(IDC_NBODIES_LABEL)->SetText(szTemp);
-}
-
+} // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 bool CALLBACK IsD3D11DeviceAcceptable(const CD3D11EnumAdapterInfo* AdapterInfo, UINT Output, const CD3D11EnumDeviceInfo* DeviceInfo,
 									  DXGI_FORMAT BackBufferFormat, bool bWindowed, void* pUserContext){
 	// reject any device which doesn't support CS4x
 	return (DeviceInfo->ComputeShaders_Plus_RawAndStructuredBuffers_Via_Shader_4_x != false);
-}
-
-//--------------------------------------------------------------------------------------
+}//--------------------------------------------------------------------------------------
 // This callback function will be called immediately after the Direct3D device has been 
 // created, which will happen during application initialization and windowed/full screen 
 // toggles. This is the best location to Create D3DPOOL_MANAGED resources since these 
 // resources need to be reloaded whenever the device is destroyed. Resources created  
 // here should be released in the OnD3D11DestroyDevice callback. 
-//--------------------------------------------------------------------------------------
-
 HRESULT CALLBACK OnD3D11CreateDevice(ID3D11Device* pd3dDevice, const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc,
 									 void* pUserContext){
 	HRESULT hr = S_OK;
@@ -680,7 +606,6 @@ HRESULT CALLBACK OnD3D11CreateDevice(ID3D11Device* pd3dDevice, const DXGI_SURFAC
 	g_pParticleVertexLayout = nullptr;
 	V_RETURN(pd3dDevice->CreateInputLayout(layout, sizeof(layout) / sizeof(layout[0]),
 										   pBlobRenderParticlesVS->GetBufferPointer(), pBlobRenderParticlesVS->GetBufferSize(), &g_pParticleVertexLayout));
-
 	// Create NBody object
 	g_pNBody = NBodyFactory(g_eComputeType);
 	V_RETURN(CreateParticleBuffer(pd3dDevice));
@@ -697,7 +622,7 @@ HRESULT CALLBACK OnD3D11CreateDevice(ID3D11Device* pd3dDevice, const DXGI_SURFAC
 	V_RETURN(pd3dDevice->CreateBuffer(&bufferDesc, nullptr, &g_pConstantBuffer));
 
 	// Load the Particle Texture
-	WCHAR str[MAX_PATH];
+	WCHAR str[MAX_PATH] = {};
 	V_RETURN(DXUTFindDXSDKMediaFileCch(str, MAX_PATH, L"UI\\Particle.dds"));
 	g_pShaderResView = nullptr;
 	V_RETURN(D3DX11CreateShaderResourceViewFromFile(pd3dDevice, str, nullptr, nullptr, &g_pShaderResView, nullptr));
@@ -758,16 +683,11 @@ HRESULT CALLBACK OnD3D11ResizedSwapChain(ID3D11Device* pd3dDevice, IDXGISwapChai
 	g_sampleUI.SetSize(170, 300);
 
 	return hr;
-}
-
+} // //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void CALLBACK OnD3D11ReleasingSwapChain(void* pUserContext){
 	g_dialogResourceManager.OnD3D11ReleasingSwapChain();
-}
-
-//--------------------------------------------------------------------------------------
+}//--------------------------------------------------------------------------------------
 //  Create particle buffers for use during rendering.
-//--------------------------------------------------------------------------------------
-
 void RenderText(){
 	g_pTxtHelper->Begin();
 	g_pTxtHelper->SetInsertionPos(2, 0);
@@ -789,8 +709,7 @@ void RenderText(){
 	g_pTxtHelper->DrawFormattedTextLine(L"GFlops: %.2f ", gflops);
 
 	g_pTxtHelper->End();
-}
-
+} // ////////////////////////////////////////////////////////////////////////////////////////////////////
 bool RenderParticles(ID3D11DeviceContext* pd3dImmediateContext, D3DXMATRIX& view, D3DXMATRIX& projection){
 	CComPtr<ID3D11BlendState> pBlendState0;
 	CComPtr<ID3D11DepthStencilState> pDepthStencilState0;
@@ -837,10 +756,8 @@ bool RenderParticles(ID3D11DeviceContext* pd3dImmediateContext, D3DXMATRIX& view
 	pd3dImmediateContext->GSSetShader(nullptr, nullptr, 0);
 	pd3dImmediateContext->OMSetBlendState(pBlendState0, &BlendFactor0.r, SampleMask0);
 	pd3dImmediateContext->OMSetDepthStencilState(pDepthStencilState0, StencilRef0);
-
 	return true;
-}
-
+} // ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void CALLBACK OnD3D11FrameRender(ID3D11Device* pd3dDevice, ID3D11DeviceContext* pd3dImmediateContext, double fTime,
 								 float fElapsedTime, void* pUserContext){
 	// If the settings dialog is being shown, then render it instead of rendering the app's scene
@@ -848,7 +765,6 @@ void CALLBACK OnD3D11FrameRender(ID3D11Device* pd3dDevice, ID3D11DeviceContext* 
 		g_d3dSettingsDlg.OnRender(fElapsedTime);
 		return;
 	}
-
 	const float clearColor[4] = {0.0, 0.0, 0.0, 0.0};
 	ID3D11RenderTargetView* pRTV = DXUTGetD3D11RenderTargetView();
 	pd3dImmediateContext->ClearRenderTargetView(pRTV, clearColor);
@@ -868,17 +784,13 @@ void CALLBACK OnD3D11FrameRender(ID3D11Device* pd3dDevice, ID3D11DeviceContext* 
 	g_HUD.OnRender(fElapsedTime);
 	g_sampleUI.OnRender(fElapsedTime);
 	RenderText();
-}
-
-//--------------------------------------------------------------------------------------
+}//--------------------------------------------------------------------------------------
 // This callback function will be called immediately after the Direct3D device has 
 // been destroyed, which generally happens as a result of application termination or 
 // windowed/full screen toggles. Resources created in the OnD3D11CreateDevice callback 
 // should be released here, which generally includes all D3DPOOL_MANAGED resources. 
-//--------------------------------------------------------------------------------------
-
 void CALLBACK OnD3D11DestroyDevice(void* pUserContext){
 	g_dialogResourceManager.OnD3D11DestroyDevice();
 	g_d3dSettingsDlg.OnD3D11DestroyDevice();
 	DXUTGetGlobalResourceCache().OnDestroyDevice();
-}
+} // ////////////////////////////////////////////////////////////////////////////////////
