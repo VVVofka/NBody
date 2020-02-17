@@ -263,7 +263,7 @@ public:
     DXUTState()  { Create(); }
     ~DXUTState() { Destroy(); }
 
-    void                                                                                    Create()
+    void Create()
     {
         g_bThreadSafe = true;
         InitializeCriticalSectionAndSpinCount( &g_cs, 1000 );
