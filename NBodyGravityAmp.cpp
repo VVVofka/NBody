@@ -366,10 +366,11 @@ void LoadParticles(){
 	}
 } // ///////////////////////////////////////////////////////////////////////////////////////
 void LoadParticlesMy(){
-	const float centerSpread = g_Spread * 0.50f;
+	//+const float centerSpread = g_Spread * 0.50f;
 
 	// Create particles in CPU memory.
-	ParticlesCpu particles(g_maxParticles);
+	//ParticlesCpu particles(g_maxParticles);
+	ParticlesCpuMy particlesMy(g_maxParticles);
 
 	for(int i = 0; i < g_maxParticles; i += g_particleNumStepSize){
 		LoadClusterParticles(particles, i, (g_particleNumStepSize / 2),
