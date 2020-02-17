@@ -60,6 +60,7 @@ const float g_deltaTime = 0.1f;
 
 const int g_maxParticles = (57 * 1024); // Maximum number of particles in the n-body simulation.
 const int g_particleNumStepSize = 512;  // Number of particles added for each slider tick, cannot be less than the max tile size.
+const int g_particleNumStepSizeMy = 512;  // Number of particles added for each slider tick, cannot be less than the max tile size.
 
 const float g_Spread = 400.0f;          // Separation between the two clusters.
 
@@ -102,8 +103,11 @@ CComPtr<ID3D11ShaderResourceView>   g_pShaderResView;
 
 #if !(defined(DEBUG) || defined(_DEBUG))
 int                                 g_numParticles = (20 * 1024);           // The current number of particles in the n-body simulation
+int                                 g_numParticlesMy = (20 * 1024);
 #else
 int                                 g_numParticles = g_particleNumStepSize;
+int                                 g_numParticlesMy = g_particleNumStepSizeMy;
+int_3                               g_Sizies = int_3(1024, 512, 256);
 #endif
 ComputeType                         g_eComputeType = kSingleSimple;         // Default integrator compute type
 std::shared_ptr<INBodyAmp>          g_pNBody;                               // The current integrator
@@ -234,7 +238,7 @@ void InitApp(){
 	g_HUD.AddButton(IDC_RESETPARTICLES, L"Reset particles", 0, y += 26, 170, 22, VK_F2);
 
 	WCHAR szTemp[256];
-	swprintf_s(szTemp, L"Bodies: %d", g_numParticles);
+	swprintf_s(szTemp, L"Bodies: %d %d", g_numParticles, g_numParticlesMy);
 	g_HUD.AddStatic(IDC_NBODIES_LABEL, szTemp, -20, y += 34, 125, 22);
 	g_HUD.AddSlider(IDC_NBODIES_SLIDER, -20, y += 34, 170, 22, 1, g_maxParticles / g_particleNumStepSize);
 	CDXUTComboBox* pComboBox = nullptr;
@@ -279,7 +283,8 @@ void InitApp(){
 	g_HUD.GetComboBox(IDC_COMPUTETYPECOMBO)->SetSelectedByData((void*)g_eComputeType);
 	pComboBox->SetSelectedByIndex(g_eComputeType);
 
-	g_HUD.GetSlider(IDC_NBODIES_SLIDER)->SetValue((g_numParticles / g_particleNumStepSize));
+	g_HUD.GetSlider(IDC_NBODIES_SLIDER)->SetValue((g_numParticlesMy / g_particleNumStepSizeMy));
+	//g_HUD.GetSlider(IDC_NBODIES_SLIDER)->SetValue((g_numParticles / g_particleNumStepSize));
 	g_particleColors.resize(kMultiTile512 + 1);
 	g_particleColors[kSingleSimple] = D3DXCOLOR(0.05f, 1.0f, 0.05f, 1.0f);
 	g_particleColors[kSingleTile64] = D3DXCOLOR(0.05f, 1.0f, 0.05f, 1.0f);
@@ -344,6 +349,7 @@ void LoadParticles(){
 
 	// Create particles in CPU memory.
 	ParticlesCpu particles(g_maxParticles);
+	//ParticlesCpuMy particlesMy(g_maxParticles);
 
 	for(int i = 0; i < g_maxParticles; i += g_particleNumStepSize){
 		LoadClusterParticles(particles, i, (g_particleNumStepSize / 2),
@@ -365,32 +371,23 @@ void LoadParticles(){
 		copy(particles.vel.begin(), velView);
 	}
 } // ///////////////////////////////////////////////////////////////////////////////////////
-void LoadParticlesMy(){
+void LoadParticlesMy(int_3 sizies){
 	//+const float centerSpread = g_Spread * 0.50f;
 
 	// Create particles in CPU memory.
 	//ParticlesCpu particles(g_maxParticles);
 	ParticlesCpuMy particlesMy(g_maxParticles);
+	LoadClusterParticlesMy(particlesMy, sizies);
 
-	for(int i = 0; i < g_maxParticles; i += g_particleNumStepSize){
-		LoadClusterParticles(particles, i, (g_particleNumStepSize / 2),
-							 float_3(centerSpread, 0.0f, 0.0f),
-							 float_3(0, 0, -20),
-							 g_Spread);
-		LoadClusterParticles(particles, (i + g_particleNumStepSize / 2), ((g_particleNumStepSize + 1) / 2),
-							 float_3(-centerSpread, 0.0f, 0.0f),
-							 float_3(0, 0, 20),
-							 g_Spread);
-	}
-	// Copy particles to GPU memory.
-	index<1> begin(0);
-	extent<1> end(g_maxParticles);
-	for(size_t i = 0; i < g_deviceData.size(); ++i){
-		array_view<float_3, 1> posView = g_deviceData[i]->DataOld->pos.section(index<1>(begin), extent<1>(end));
-		copy(particles.pos.begin(), posView);
-		array_view<float_3, 1> velView = g_deviceData[i]->DataOld->vel.section(index<1>(begin), extent<1>(end));
-		copy(particles.vel.begin(), velView);
-	}
+	//// Copy particles to GPU memory.
+	//index<1> begin(0);
+	//extent<1> end(g_maxParticles);
+	//for(size_t i = 0; i < g_deviceData.size(); ++i){
+	//	array_view<float_3, 1> posView = g_deviceData[i]->DataOld->pos.section(index<1>(begin), extent<1>(end));
+	//	copy(particles.pos.begin(), posView);
+	//	array_view<float_3, 1> velView = g_deviceData[i]->DataOld->vel.section(index<1>(begin), extent<1>(end));
+	//	copy(particles.vel.begin(), velView);
+	//}
 } // ///////////////////////////////////////////////////////////////////////////////////////
 //--------------------------------------------------------------------------------------
 //  Integrator class factory. 
@@ -527,7 +524,7 @@ bool CALLBACK ModifyDeviceSettings(DXUTDeviceSettings* pDeviceSettings, void* pU
 //--------------------------------------------------------------------------------------
 
 void CALLBACK OnFrameMove(double fTime, float fElapsedTime, void* pUserContext){
-	g_pNBody->Integrate(g_deviceData, g_numParticles);
+	g_pNBody->Integrate(g_deviceData, g_numParticles, g_Sizies);
 	std::for_each(g_deviceData.begin(), g_deviceData.end(), [](std::shared_ptr<TaskData>& t){
 		std::swap(t->DataOld, t->DataNew);
 	});

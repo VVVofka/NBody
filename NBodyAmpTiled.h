@@ -50,7 +50,10 @@ public:
 
     inline int TileSize() const { return m_tileSize; }
 
-    inline void Integrate(const std::vector<std::shared_ptr<TaskData>>& particleData, int numParticles) const
+    inline void Integrate(
+        const std::vector<std::shared_ptr<TaskData>>& particleData, 
+        int numParticles,
+        int_3 sizies) const
     {
         TiledBodyBodyInteraction(*particleData[0]->DataOld, *particleData[0]->DataNew, 0, numParticles, numParticles);
     }

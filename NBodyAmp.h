@@ -171,15 +171,18 @@ void LoadClusterParticles(ParticlesCpu& particles, int offset, int size, float_3
 		particles.vel[i] = velocity;
 	};
 } // //////////////////////////////////////////////////////////////////////////////////////////
-void LoadClusterParticlesMy(ParticlesCpu& particles, int count, int_3 sizes){
+void LoadClusterParticlesMy(ParticlesCpuMy& particlesMy, int_3 sizes){
 	std::random_device rd;
 	std::default_random_engine engine(rd());
 	std::uniform_int_distribution<int> randX(0, sizes.get_x());
-	std::uniform_int_distribution<int> randY(0, sizes.get_x());
-	std::uniform_int_distribution<int> randZ(0, sizes.get_x());
+	std::uniform_int_distribution<int> randY(0, sizes.get_y());
+	std::uniform_int_distribution<int> randZ(0, sizes.get_z());
 
-	for(int i = 0; i < count; ++i){
-		LoadParticlesMy.pos[i] = center + delta;
-		particles.vel[i] = velocity;
-	};
+	for(int i = 0; i < particlesMy.size(); ++i){
+		int x = randX(engine);
+		int y = randY(engine);
+		int z = randZ(engine);
+		particlesMy.pos[i] = int_3(x, y, z);
+		particlesMy.intend[i] = float_3(0.0f, 0.0f, 0.0f);
+	}
 } // //////////////////////////////////////////////////////////////////////////////////////////

@@ -44,8 +44,10 @@ public:
     //  No tiling.
     inline int TileSize() const { return 1; }
 
-    void Integrate(const std::vector<std::shared_ptr<TaskData>>& particleData, 
-        int numParticles) const
+    void Integrate(
+        const std::vector<std::shared_ptr<TaskData>>& particleData, 
+        int numParticles, 
+        int_3 sizies) const
     {
         assert(numParticles > 0);
         assert((numParticles % 4) == 0);
