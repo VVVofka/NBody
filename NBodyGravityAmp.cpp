@@ -111,6 +111,7 @@ int_3                               g_Sizies = int_3(1024, 512, 256);
 #endif
 ComputeType                         g_eComputeType = kSingleSimple;         // Default integrator compute type
 std::shared_ptr<INBodyAmp>          g_pNBody;                               // The current integrator
+std::shared_ptr<INBodyAmpMy>        g_pNBodyMy;                             // The current integrator
 
 //  Particle data structures.
 
@@ -524,7 +525,8 @@ bool CALLBACK ModifyDeviceSettings(DXUTDeviceSettings* pDeviceSettings, void* pU
 //--------------------------------------------------------------------------------------
 
 void CALLBACK OnFrameMove(double fTime, float fElapsedTime, void* pUserContext){
-	g_pNBody->Integrate(g_deviceData, g_numParticles, g_Sizies);
+	g_pNBody->Integrate(g_deviceData, g_numParticles);
+	g_pNBodyMy->Integrate(g_deviceData, g_numParticles, g_Sizies);
 	std::for_each(g_deviceData.begin(), g_deviceData.end(), [](std::shared_ptr<TaskData>& t){
 		std::swap(t->DataOld, t->DataNew);
 	});

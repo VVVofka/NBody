@@ -41,15 +41,11 @@ public:
 
 	void Integrate(
 		const std::vector<std::shared_ptr<TaskData>>& particleData,
-		int numParticles,
-		int_3 sizies) const{
+		int numParticles) const{
 
 		assert(numParticles > 0);
 		assert((numParticles % 4) == 0);
-		assert((sizies.get_x() % 2 == 1) && (sizies.get_y() % 2 == 1) && (sizies.get_z() % 2 == 1));
 
-		ParticlesAmp particlesIn = *particleData[0]->DataOld;
-		ParticlesAmp particlesOut = *particleData[0]->DataNew;
 		ParticlesAmp particlesIn = *particleData[0]->DataOld;
 		ParticlesAmp particlesOut = *particleData[0]->DataNew;
 
@@ -77,7 +73,7 @@ public:
 		});
 	} // ///////////////////////////////////////////////////////////////////////////////
 }; // *** class NBodyAmpSimple : public INBodyAmp *******************************************
-class NBodyAmpSimpleMy : public INBodyAmp{
+class NBodyAmpSimpleMy : public INBodyAmpMy{
 private:
 	float m_softeningSquared;
 	float m_dampingFactor;
@@ -85,7 +81,7 @@ private:
 	float m_particleMass;
 
 public:
-	NBodyAmpSimple(float softeningSquared, float dampingFactor, float deltaTime, float particleMass) :
+	NBodyAmpSimpleMy(float softeningSquared, float dampingFactor, float deltaTime, float particleMass) :
 		m_softeningSquared(softeningSquared),
 		m_dampingFactor(dampingFactor),
 		m_deltaTime(deltaTime),
@@ -103,8 +99,6 @@ public:
 		assert((numParticles % 4) == 0);
 		assert((sizies.get_x() % 2 == 1) && (sizies.get_y() % 2 == 1) && (sizies.get_z() % 2 == 1));
 
-		ParticlesAmp particlesIn = *particleData[0]->DataOld;
-		ParticlesAmp particlesOut = *particleData[0]->DataNew;
 		ParticlesAmp particlesIn = *particleData[0]->DataOld;
 		ParticlesAmp particlesOut = *particleData[0]->DataNew;
 
