@@ -21,62 +21,114 @@
 //--------------------------------------------------------------------------------------
 //  Simple integration implementation.
 //--------------------------------------------------------------------------------------
-//
 //  This integrator does not specify a tiling or use tile static memory.
-
-class NBodyAmpSimple : public INBodyAmp
-{
+class NBodyAmpSimple : public INBodyAmp{
 private:
-    float m_softeningSquared;
-    float m_dampingFactor;
-    float m_deltaTime;
-    float m_particleMass;
+	float m_softeningSquared;
+	float m_dampingFactor;
+	float m_deltaTime;
+	float m_particleMass;
 
 public:
-    NBodyAmpSimple(float softeningSquared, float dampingFactor, float deltaTime, float particleMass) :
-        m_softeningSquared(softeningSquared),
-        m_dampingFactor(dampingFactor),
-        m_deltaTime(deltaTime),
-        m_particleMass(particleMass)
-    {
-    }
+	NBodyAmpSimple(float softeningSquared, float dampingFactor, float deltaTime, float particleMass) :
+		m_softeningSquared(softeningSquared),
+		m_dampingFactor(dampingFactor),
+		m_deltaTime(deltaTime),
+		m_particleMass(particleMass){}
 
-    //  No tiling.
-    inline int TileSize() const { return 1; }
+	//  No tiling.
+	inline int TileSize() const{ return 1; }
 
-    void Integrate(
-        const std::vector<std::shared_ptr<TaskData>>& particleData, 
-        int numParticles, 
-        int_3 sizies) const
-    {
-        assert(numParticles > 0);
-        assert((numParticles % 4) == 0);
+	void Integrate(
+		const std::vector<std::shared_ptr<TaskData>>& particleData,
+		int numParticles,
+		int_3 sizies) const{
 
-        ParticlesAmp particlesIn = *particleData[0]->DataOld;
-        ParticlesAmp particlesOut = *particleData[0]->DataNew;
+		assert(numParticles > 0);
+		assert((numParticles % 4) == 0);
+		assert((sizies.get_x() % 2 == 1) && (sizies.get_y() % 2 == 1) && (sizies.get_z() % 2 == 1));
 
-        extent<1> computeDomain(numParticles);
-        const float softeningSquared = m_softeningSquared;
-        const float dampingFactor = m_dampingFactor;
-        const float deltaTime = m_deltaTime;
-        const float particleMass = m_particleMass;
+		ParticlesAmp particlesIn = *particleData[0]->DataOld;
+		ParticlesAmp particlesOut = *particleData[0]->DataNew;
+		ParticlesAmp particlesIn = *particleData[0]->DataOld;
+		ParticlesAmp particlesOut = *particleData[0]->DataNew;
 
-        parallel_for_each(computeDomain, [=] (index<1> idx) restrict(amp)
-        {
-            float_3 pos = particlesIn.pos[idx];
-            float_3 vel = particlesIn.vel[idx];
-            float_3 acc = 0.0f;
+		extent<1> computeDomain(numParticles);
+		const float softeningSquared = m_softeningSquared;
+		const float dampingFactor = m_dampingFactor;
+		const float deltaTime = m_deltaTime;
+		const float particleMass = m_particleMass;
 
-            // Update current Particle using all other particles
-            for (int j = 0; j < numParticles; ++j)                
-                BodyBodyInteraction(acc, pos, particlesIn.pos[j], softeningSquared, particleMass);
+		parallel_for_each(computeDomain, [=](index<1> idx) restrict(amp){
+			float_3 pos = particlesIn.pos[idx];
+			float_3 vel = particlesIn.vel[idx];
+			float_3 acc = 0.0f;
 
-            vel += acc * deltaTime;
-            vel *= dampingFactor;
-            pos += vel * deltaTime;
+			// Update current Particle using all other particles
+			for(int j = 0; j < numParticles; ++j)
+				BodyBodyInteraction(acc, pos, particlesIn.pos[j], softeningSquared, particleMass);
 
-            particlesOut.pos[idx] = pos;
-            particlesOut.vel[idx] = vel;
-        });
-    }
-};
+			vel += acc * deltaTime;
+			vel *= dampingFactor;
+			pos += vel * deltaTime;
+
+			particlesOut.pos[idx] = pos;
+			particlesOut.vel[idx] = vel;
+		});
+	} // ///////////////////////////////////////////////////////////////////////////////
+}; // *** class NBodyAmpSimple : public INBodyAmp *******************************************
+class NBodyAmpSimpleMy : public INBodyAmp{
+private:
+	float m_softeningSquared;
+	float m_dampingFactor;
+	float m_deltaTime;
+	float m_particleMass;
+
+public:
+	NBodyAmpSimple(float softeningSquared, float dampingFactor, float deltaTime, float particleMass) :
+		m_softeningSquared(softeningSquared),
+		m_dampingFactor(dampingFactor),
+		m_deltaTime(deltaTime),
+		m_particleMass(particleMass){}
+
+	//  No tiling.
+	inline int TileSize() const{ return 1; }
+
+	void Integrate(
+		const std::vector<std::shared_ptr<TaskData>>& particleData,
+		int numParticles,
+		int_3 sizies) const{
+
+		assert(numParticles > 0);
+		assert((numParticles % 4) == 0);
+		assert((sizies.get_x() % 2 == 1) && (sizies.get_y() % 2 == 1) && (sizies.get_z() % 2 == 1));
+
+		ParticlesAmp particlesIn = *particleData[0]->DataOld;
+		ParticlesAmp particlesOut = *particleData[0]->DataNew;
+		ParticlesAmp particlesIn = *particleData[0]->DataOld;
+		ParticlesAmp particlesOut = *particleData[0]->DataNew;
+
+		extent<1> computeDomain(numParticles);
+		const float softeningSquared = m_softeningSquared;
+		const float dampingFactor = m_dampingFactor;
+		const float deltaTime = m_deltaTime;
+		const float particleMass = m_particleMass;
+
+		parallel_for_each(computeDomain, [=](index<1> idx) restrict(amp){
+			float_3 pos = particlesIn.pos[idx];
+			float_3 vel = particlesIn.vel[idx];
+			float_3 acc = 0.0f;
+
+			// Update current Particle using all other particles
+			for(int j = 0; j < numParticles; ++j)
+				BodyBodyInteraction(acc, pos, particlesIn.pos[j], softeningSquared, particleMass);
+
+			vel += acc * deltaTime;
+			vel *= dampingFactor;
+			pos += vel * deltaTime;
+
+			particlesOut.pos[idx] = pos;
+			particlesOut.vel[idx] = vel;
+		});
+	} // ///////////////////////////////////////////////////////////////////////////////
+}; // *** class NBodyAmpSimple : public INBodyAmp *******************************************

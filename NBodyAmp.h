@@ -43,7 +43,6 @@ using namespace concurrency::graphics;
 //
 //  This is an struct of arrays, rather than the more conventional array of structs used by
 //  the n-body CPU example. In general structs of arrays are more efficient for GPU programming.
-
 struct ParticlesCpu{
 	std::vector<float_3> pos;
 	std::vector<float_3> vel;
@@ -68,35 +67,35 @@ struct ParticlesCpuMy{
 }; // *************************************************************************************************
 
 //  Data structure for storing particles on the C++ AMP accelerator.
-//
 //  This is an struct of arrays, rather than the more conventional array of structs used by
 //  the n-body CPU example. In general structs of arrays are more efficient for GPU programming.
-
 struct ParticlesAmp{
 	array<float_3, 1>& pos;
 	array<float_3, 1>& vel;
-
 public:
 	ParticlesAmp(array<float_3, 1>& pos, array<float_3, 1>& vel) : pos(pos), vel(vel){}
-
+	inline int size() const{ return pos.extent.size(); }
+}; // ****************************************************************************************
+struct ParticlesAmpMy{
+	array<int_3, 1>& pos;
+	array<float_3, 1>& intend;
+public:
+	ParticlesAmpMy(array<int_3, 1>& pos, array<float_3, 1>& intend) : pos(pos), intend(intend){}
 	inline int size() const{ return pos.extent.size(); }
 }; // ****************************************************************************************
 
 //  Structure storing all the data associated with processing a subset of 
 //  particles on a single C++ AMP accelerator.
-
 struct TaskData{
 public:
 	accelerator Accelerator;
 	std::shared_ptr<ParticlesAmp> DataOld;      // These hold references to the data
 	std::shared_ptr<ParticlesAmp> DataNew;
-
 private:
 	array<float_3, 1> m_posOld;                 // These hold the actual data.
 	array<float_3, 1> m_posNew;
 	array<float_3, 1> m_velOld;
 	array<float_3, 1> m_velNew;
-
 public:
 	TaskData(int size, accelerator_view view, accelerator acc) :
 		Accelerator(acc),
@@ -106,7 +105,27 @@ public:
 		m_velNew(size, view),
 		DataOld(new ParticlesAmp(m_posOld, m_velOld)),
 		DataNew(new ParticlesAmp(m_posNew, m_velNew)){}
-};
+}; // *******************************************************************************************
+struct TaskDataMy{
+public:
+	accelerator Accelerator;
+	std::shared_ptr<ParticlesAmpMy> DataOld;      // These hold references to the data
+	std::shared_ptr<ParticlesAmpMy> DataNew;
+private:
+	array<int_3, 1> m_posOld;                 // These hold the actual data.
+	array<int_3, 1> m_posNew;
+	array<float_3, 1> m_intendOld;
+	array<float_3, 1> m_intendNew;
+public:
+	TaskDataMy(int size, accelerator_view view, accelerator acc) :
+		Accelerator(acc),
+		m_posOld(size, view),
+		m_intendOld(size, view),
+		m_posNew(size, view),
+		m_intendNew(size, view),
+		DataOld(new ParticlesAmpMy(m_posOld, m_intendOld)),
+		DataNew(new ParticlesAmpMy(m_posNew, m_intendNew)){}
+}; // *******************************************************************************************
 
 std::vector<std::shared_ptr<TaskData>> CreateTasks(int numParticles,
 												   accelerator_view renderView){
