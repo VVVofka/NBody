@@ -77,12 +77,21 @@ CComPtr<ID3D11SamplerState>         g_pSampleStateLinear;
 CComPtr<ID3D11BlendState>           g_pBlendingStateParticle;
 CComPtr<ID3D11DepthStencilState>    g_pDepthStencilState;
 
+
 CComPtr<ID3D11Buffer>               g_pParticlePosOld;
 CComPtr<ID3D11Buffer>               g_pParticlePosNew;
 CComPtr<ID3D11ShaderResourceView>   g_pParticlePosRvOld;
 CComPtr<ID3D11ShaderResourceView>   g_pParticlePosRvNew;
 CComPtr<ID3D11UnorderedAccessView>  g_pParticlePosUavOld;
 CComPtr<ID3D11UnorderedAccessView>  g_pParticlePosUavNew;
+
+CComPtr<ID3D11Buffer>               g_pParticlePosOldMy;
+CComPtr<ID3D11Buffer>               g_pParticlePosNewMy;
+CComPtr<ID3D11ShaderResourceView>   g_pParticlePosRvOldMy;
+CComPtr<ID3D11ShaderResourceView>   g_pParticlePosRvNewMy;
+CComPtr<ID3D11UnorderedAccessView>  g_pParticlePosUavOldMy;
+CComPtr<ID3D11UnorderedAccessView>  g_pParticlePosUavNewMy;
+
 
 CComPtr<ID3D11Buffer>               g_pParticleBuffer;
 CComPtr<ID3D11InputLayout>          g_pParticleVertexLayout;
@@ -499,46 +508,46 @@ HRESULT CreateParticlePosBufferMy(ID3D11Device* pd3dDevice){
 	accelerator_view renderView =
 		concurrency::direct3d::create_accelerator_view(reinterpret_cast<IUnknown*>(pd3dDevice));
 	g_deviceDataMy = CreateTasksMy(g_maxParticlesMy, g_Sizies, renderView);
-	LoadParticles();
+	LoadParticlesMy();
 
-	g_pParticlePosOld = nullptr;
-	g_pParticlePosNew = nullptr;
+	g_pParticlePosOldMy = nullptr;
+	g_pParticlePosNewMy = nullptr;
 	//  Particles from GPU zero are the ones synced with the graphics buffers. 
 	//  Attach AMP array of positions to D3D buffer.
 	hr = concurrency::direct3d::get_buffer(
-		g_deviceData[0]->DataOld->pos)->QueryInterface(__uuidof(ID3D11Buffer),
-													   reinterpret_cast<LPVOID*>(&g_pParticlePosOld));
+		g_deviceDataMy[0]->DataOld->pos)->QueryInterface(__uuidof(ID3D11Buffer),
+													   reinterpret_cast<LPVOID*>(&g_pParticlePosOldMy));
 	V_RETURN(hr);
 	hr = concurrency::direct3d::get_buffer(
-		g_deviceData[0]->DataNew->pos)->QueryInterface(__uuidof(ID3D11Buffer),
-													   reinterpret_cast<LPVOID*>(&g_pParticlePosNew));
+		g_deviceDataMy[0]->DataNew->pos)->QueryInterface(__uuidof(ID3D11Buffer),
+													   reinterpret_cast<LPVOID*>(&g_pParticlePosNewMy));
 	V_RETURN(hr)
 		D3D11_SHADER_RESOURCE_VIEW_DESC resourceDesc;
 	ZeroMemory(&resourceDesc, sizeof(resourceDesc));
 	resourceDesc.Format = DXGI_FORMAT_R32_TYPELESS;
 	resourceDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFEREX;
 	resourceDesc.BufferEx.FirstElement = 0;
-	resourceDesc.BufferEx.NumElements = (g_maxParticles * sizeof(float_3)) / sizeof(float);
+	resourceDesc.BufferEx.NumElements = (g_maxParticlesMy * sizeof(int_3)) / sizeof(int);
 	resourceDesc.BufferEx.Flags = D3D11_BUFFEREX_SRV_FLAG_RAW;
-	g_pParticlePosRvOld = nullptr;
-	g_pParticlePosRvNew = nullptr;
-	hr = pd3dDevice->CreateShaderResourceView(g_pParticlePosOld, &resourceDesc, &g_pParticlePosRvOld);
+	g_pParticlePosRvOldMy = nullptr;
+	g_pParticlePosRvNewMy = nullptr;
+	hr = pd3dDevice->CreateShaderResourceView(g_pParticlePosOldMy, &resourceDesc, &g_pParticlePosRvOldMy);
 	V_RETURN(hr);
-	hr = pd3dDevice->CreateShaderResourceView(g_pParticlePosNew, &resourceDesc, &g_pParticlePosRvNew);
+	hr = pd3dDevice->CreateShaderResourceView(g_pParticlePosNewMy, &resourceDesc, &g_pParticlePosRvNewMy);
 	V_RETURN(hr);
 
-	g_pParticlePosUavOld = nullptr;
-	g_pParticlePosUavNew = nullptr;
+	g_pParticlePosUavOldMy = nullptr;
+	g_pParticlePosUavNewMy = nullptr;
 	D3D11_UNORDERED_ACCESS_VIEW_DESC viewDesc;
 	ZeroMemory(&viewDesc, sizeof(D3D11_UNORDERED_ACCESS_VIEW_DESC));
 	viewDesc.Format = DXGI_FORMAT_R32_TYPELESS;
 	viewDesc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
 	viewDesc.Buffer.FirstElement = 0;
-	viewDesc.Buffer.NumElements = (g_maxParticles * sizeof(float_3)) / sizeof(float);
+	viewDesc.Buffer.NumElements = (g_maxParticlesMy * sizeof(int_3)) / sizeof(int);
 	viewDesc.Buffer.Flags = D3D11_BUFFER_UAV_FLAG_RAW;
-	hr = pd3dDevice->CreateUnorderedAccessView(g_pParticlePosOld, &viewDesc, &g_pParticlePosUavOld);
+	hr = pd3dDevice->CreateUnorderedAccessView(g_pParticlePosOldMy, &viewDesc, &g_pParticlePosUavOldMy);
 	V_RETURN(hr);
-	hr = pd3dDevice->CreateUnorderedAccessView(g_pParticlePosNew, &viewDesc, &g_pParticlePosUavNew);
+	hr = pd3dDevice->CreateUnorderedAccessView(g_pParticlePosNewMy, &viewDesc, &g_pParticlePosUavNewMy);
 	V_RETURN(hr);
 	return hr;
 }//--------------------------------------------------------------------------------------
