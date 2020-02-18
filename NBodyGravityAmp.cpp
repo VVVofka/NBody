@@ -222,7 +222,7 @@ void InitApp(){
 	g_HUD.AddComboBox(IDC_COMPUTETYPECOMBO, -133, y += 34, 300, 26, L'G', false, &pComboBox);
 
 	// The ordering of these names must match the FrameProcessorType enumeration.
-	std::wstring processorNames[] =	{
+	std::wstring processorNames[] = {
 		std::wstring(L"C++ AMP Simple Model "),                // kCpuSingle
 		std::wstring(L"C++ AMP Tiled Model 64 "),
 		std::wstring(L"C++ AMP Tiled Model 128 "),
@@ -333,22 +333,29 @@ void LoadParticles(){
 		copy(particles.vel.begin(), velView);
 	}
 } // ///////////////////////////////////////////////////////////////////////////////////////
-void LoadParticlesMy(int_3 sizies){
+void LoadParticlesMy(int_3 sizes){
 	// Create particles in CPU memory.
-	ParticlesCpuMy particlesMy(g_maxParticlesMy);
-	LoadClusterParticlesMy(particlesMy, sizies);
+	ParticlesCpuMy particlesMy(g_maxParticlesMy, sizes);
+	LoadClusterParticlesMy(particlesMy, sizes);
 
 	// Copy particles to GPU memory.
 	index<1> begin(0);
 	extent<1> end(g_maxParticlesMy);
+
+	index<3> beginArea(0, 0, 0);
+	extent<3> endArea(sizes.get_x(), sizes.get_y(), sizes.get_z());
+
 	for(size_t i = 0; i < g_deviceDataMy.size(); ++i){
 		std::shared_ptr<ParticlesAmpMy> pold = g_deviceDataMy[i]->DataOld;
-		
+
 		array_view<int_3, 1> posView = pold->pos.section(index<1>(begin), extent<1>(end));
 		copy(particlesMy.pos.begin(), posView);
 
 		array_view<float_3, 1> intendView = pold->intend.section(index<1>(begin), extent<1>(end));
 		copy(particlesMy.intend.begin(), intendView);
+
+		array_view<int, 3> areaView = pold->area.section(index<3>(beginArea), extent<3>(endArea));
+		copy(particlesMy.area.data(), areaView);
 	} // for(size_t i = 0; i < g_deviceDataMy.size(); ++i)
 } // ///////////////////////////////////////////////////////////////////////////////////////
 //  Integrator class factory. 
@@ -401,11 +408,11 @@ std::shared_ptr<INBodyAmpMy> NBodyFactoryMy(ComputeTypeMy type){
 	switch(type){
 	case ComputeTypeMy::D3:
 		return std::make_shared<NBodyAmpSimpleMy>(g_softeningSquared, g_dampingFactor,
-												g_deltaTime, g_particleMass);
+												  g_deltaTime, g_particleMass);
 		break;
 	case ComputeTypeMy::Flat:
 		return std::make_shared<NBodyAmpSimpleMy>(g_softeningSquared, g_dampingFactor,
-												   g_deltaTime, g_particleMass);
+												  g_deltaTime, g_particleMass);
 		break;
 	default:
 		assert(false);

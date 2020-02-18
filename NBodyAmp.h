@@ -57,8 +57,13 @@ struct ParticlesCpu{
 struct ParticlesCpuMy{
 	std::vector<int_3> pos;
 	std::vector<float_3> intend;
+	Concurrency::array<int, 3> area;
 
-	ParticlesCpuMy(int size) : pos(size), intend(size){}
+	ParticlesCpuMy(int size, int_3 sizes) : 
+		pos(size), 
+		intend(size), 
+		area(sizes.get_x(), sizes.get_y(), sizes.get_z()){
+	}
 
 	inline int size() const{
 		assert(pos.size() == intend.size());
@@ -79,8 +84,13 @@ public:
 struct ParticlesAmpMy{
 	array<int_3, 1>& pos;
 	array<float_3, 1>& intend;
+	array<int, 3>& area;
 public:
-	ParticlesAmpMy(array<int_3, 1>& pos, array<float_3, 1>& intend) : pos(pos), intend(intend){}
+	ParticlesAmpMy(array<int_3, 1>& pos, array<float_3, 1>& intend, array<int, 3>& area) : 
+		pos(pos), 
+		intend(intend), 
+		area(area)
+	{}
 	inline int size() const{ return pos.extent.size(); }
 }; // ****************************************************************************************
 
@@ -118,15 +128,19 @@ private:
 	array<int_3, 1> m_posNew;
 	array<float_3, 1> m_intendOld;
 	array<float_3, 1> m_intendNew;
+	array<int, 3> m_arrayOld;
+	array<int, 3> m_arrayNew;
 public:
-	TaskDataMy(int size, accelerator_view view, accelerator acc) :
+	TaskDataMy(int size, int_3 sizes, accelerator_view view, accelerator acc) :
 		Accelerator(acc),
 		m_posOld(size, view),
 		m_intendOld(size, view),
 		m_posNew(size, view),
 		m_intendNew(size, view),
-		DataOld(new ParticlesAmpMy(m_posOld, m_intendOld)),
-		DataNew(new ParticlesAmpMy(m_posNew, m_intendNew)){}
+		m_arrayOld(sizes.get_x(), sizes.get_y(), sizes.get_z(), view),
+		m_arrayNew(sizes.get_x(), sizes.get_y(), sizes.get_z(), view),
+		DataOld(new ParticlesAmpMy(m_posOld, m_intendOld, m_arrayOld)),
+		DataNew(new ParticlesAmpMy(m_posNew, m_intendNew, m_arrayNew)){}
 }; // *******************************************************************************************
 
 std::vector<std::shared_ptr<TaskData>> CreateTasks(int numParticles,
@@ -146,13 +160,11 @@ std::vector<std::shared_ptr<TaskData>> CreateTasks(int numParticles,
 			tasks.push_back(std::make_shared<TaskData>(numParticles, d.default_view, d));
 		});
 	}
-
 	if(tasks.empty()){
 		OutputDebugStringW(L"WARNING: No C++ AMP capable accelerators available, using REF.");
 		accelerator a = accelerator(accelerator::default_accelerator);
 		tasks.push_back(std::make_shared<TaskData>(numParticles, renderView, a));
 	}
-
 	AmpUtils::DebugListAccelerators(gpuAccelerators);
 	return tasks;
 }//--------------------------------------------------------------------------------------
@@ -191,11 +203,21 @@ void LoadClusterParticlesMy(ParticlesCpuMy& particlesMy, int_3 sizes){
 	std::uniform_int_distribution<int> randY(0, sizes.get_y());
 	std::uniform_int_distribution<int> randZ(0, sizes.get_z());
 
+	for(int x=0; x<sizes.get_x(); x++)
+		for(int y = 0; y < sizes.get_y(); y++)
+			for(int z = 0; z < sizes.get_z(); z++)
+				particlesMy.area[x][y][z] = 0;
+
 	for(int i = 0; i < particlesMy.size(); ++i){
-		int x = randX(engine);
-		int y = randY(engine);
-		int z = randZ(engine);
+		int x, y, z;
+		do{
+			x = randX(engine);
+			y = randY(engine);
+			z = randZ(engine);
+		} while(particlesMy.area[x][y][z] != 0);
+
 		particlesMy.pos[i] = int_3(x, y, z);
 		particlesMy.intend[i] = float_3(0.0f, 0.0f, 0.0f);
+		particlesMy.area[x][y][z] = 1;
 	}
 } // //////////////////////////////////////////////////////////////////////////////////////////
