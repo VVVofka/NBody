@@ -109,7 +109,7 @@ int                                 g_numParticlesMy = (20 * 1024);
 #else
 int                                 g_numParticles = g_particleNumStepSize;
 int                                 g_numParticlesMy = g_particleNumStepSizeMy;
-int_3                               g_Sizies = int_3(1024 + 1, 512 + 1, 256 + 1);
+int_3                               g_Sizes = int_3(1024 + 1, 512 + 1, 256 + 1);
 #endif
 ComputeType                         g_eComputeType = kSingleSimple;         // Default integrator compute type
 ComputeTypeMy                       g_eComputeTypeMy = ComputeTypeMy::D3;         // Default integrator compute type
@@ -507,8 +507,8 @@ HRESULT CreateParticlePosBufferMy(ID3D11Device* pd3dDevice){
 	HRESULT hr = S_OK;
 	accelerator_view renderView =
 		concurrency::direct3d::create_accelerator_view(reinterpret_cast<IUnknown*>(pd3dDevice));
-	g_deviceDataMy = CreateTasksMy(g_maxParticlesMy, g_Sizies, renderView);
-	LoadParticlesMy();
+	g_deviceDataMy = CreateTasksMy(g_maxParticlesMy, g_Sizes, renderView);
+	LoadParticlesMy(g_Sizes);
 
 	g_pParticlePosOldMy = nullptr;
 	g_pParticlePosNewMy = nullptr;
@@ -577,7 +577,7 @@ bool CALLBACK ModifyDeviceSettings(DXUTDeviceSettings* pDeviceSettings, void* pU
 // OnFrameRender callback.  
 void CALLBACK OnFrameMove(double fTime, float fElapsedTime, void* pUserContext){
 	g_pNBody->Integrate(g_deviceData, g_numParticles);
-	g_pNBodyMy->Integrate(g_deviceDataMy, g_numParticlesMy, g_Sizies);
+	g_pNBodyMy->Integrate(g_deviceDataMy, g_numParticlesMy, g_Sizes);
 	std::for_each(g_deviceData.begin(), g_deviceData.end(), [](std::shared_ptr<TaskData>& t){
 		std::swap(t->DataOld, t->DataNew);
 	});
