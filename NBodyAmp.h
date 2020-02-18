@@ -155,12 +155,8 @@ std::vector<std::shared_ptr<TaskData>> CreateTasks(int numParticles,
 
 	AmpUtils::DebugListAccelerators(gpuAccelerators);
 	return tasks;
-}
-
-//--------------------------------------------------------------------------------------
+}//--------------------------------------------------------------------------------------
 //  Calculate the acceleration (force * mass) change for a pair of particles.
-//--------------------------------------------------------------------------------------
-
 void BodyBodyInteraction(float_3& acc, const float_3 particlePosition,
 						 const float_3 otherParticlePosition,
 						 float softeningSquared, float particleMass) restrict(amp){
@@ -173,12 +169,8 @@ void BodyBodyInteraction(float_3& acc, const float_3 particlePosition,
 	float s = particleMass * invDistCube;
 
 	acc += r * s;
-}
-
-//--------------------------------------------------------------------------------------
+}//--------------------------------------------------------------------------------------
 //  Utility functions.
-//--------------------------------------------------------------------------------------
-
 void LoadClusterParticles(ParticlesCpu& particles, int offset, int size, float_3 center, float_3 velocity, float spread){
 	std::random_device rd;
 	std::default_random_engine engine(rd());

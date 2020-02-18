@@ -44,6 +44,10 @@ enum ComputeType{
 	kMultiTile256,
 	kMultiTile512
 };//--------------------------------------------------------------------------------------
+enum ComputeTypeMy{
+	Flat = 0,
+	D3
+};//--------------------------------------------------------------------------------------
 // Global constants.
 const float g_softeningSquared = 0.0000015625f;
 const float g_dampingFactor = 0.9995f;
@@ -99,6 +103,7 @@ int                                 g_numParticlesMy = g_particleNumStepSizeMy;
 int_3                               g_Sizies = int_3(1024, 512, 256);
 #endif
 ComputeType                         g_eComputeType = kSingleSimple;         // Default integrator compute type
+ComputeTypeMy                       g_eComputeTypeMy = ComputeTypeMy::D3;         // Default integrator compute type
 std::shared_ptr<INBodyAmp>          g_pNBody;                               // The current integrator
 std::shared_ptr<INBodyAmpMy>        g_pNBodyMy;                             // The current integrator
 
@@ -307,7 +312,6 @@ void LoadParticles(){
 
 	// Create particles in CPU memory.
 	ParticlesCpu particles(g_maxParticles);
-	//ParticlesCpuMy particlesMy(g_maxParticles);
 
 	for(int i = 0; i < g_maxParticles; i += g_particleNumStepSize){
 		LoadClusterParticles(particles, i, (g_particleNumStepSize / 2),
@@ -330,10 +334,7 @@ void LoadParticles(){
 	}
 } // ///////////////////////////////////////////////////////////////////////////////////////
 void LoadParticlesMy(int_3 sizies){
-	//+const float centerSpread = g_Spread * 0.50f;
-
 	// Create particles in CPU memory.
-	//ParticlesCpu particles(g_maxParticles);
 	ParticlesCpuMy particlesMy(g_maxParticlesMy);
 	LoadClusterParticlesMy(particlesMy, sizies);
 
@@ -341,11 +342,14 @@ void LoadParticlesMy(int_3 sizies){
 	index<1> begin(0);
 	extent<1> end(g_maxParticlesMy);
 	for(size_t i = 0; i < g_deviceDataMy.size(); ++i){
-		array_view<int_3, 1> posView = g_deviceDataMy[i]->DataOldMy->pos.section(index<1>(begin), extent<1>(end));
+		std::shared_ptr<ParticlesAmpMy> pold = g_deviceDataMy[i]->DataOldMy;
+		
+		array_view<int_3, 1> posView = pold->pos.section(index<1>(begin), extent<1>(end));
 		copy(particlesMy.pos.begin(), posView);
-		array_view<float_3, 1> intendView = g_deviceDataMy[i]->DataOldMy->intend.section(index<1>(begin), extent<1>(end));
+
+		array_view<float_3, 1> intendView = pold->intend.section(index<1>(begin), extent<1>(end));
 		copy(particlesMy.intend.begin(), intendView);
-	}
+	} // for(size_t i = 0; i < g_deviceDataMy.size(); ++i)
 } // ///////////////////////////////////////////////////////////////////////////////////////
 //  Integrator class factory. 
 std::shared_ptr<INBodyAmp> NBodyFactory(ComputeType type){
@@ -385,6 +389,23 @@ std::shared_ptr<INBodyAmp> NBodyFactory(ComputeType type){
 	case kMultiTile512:
 		return std::make_shared<NBodyAmpMultiTiled<512>>(g_softeningSquared, g_dampingFactor,
 														 g_deltaTime, g_particleMass, g_maxParticles);
+		break;
+	default:
+		assert(false);
+		return nullptr;
+		break;
+	}
+}//--------------------------------------------------------------------------------------
+//  Integrator class factory. 
+std::shared_ptr<INBodyAmpMy> NBodyFactoryMy(ComputeTypeMy type){
+	switch(type){
+	case ComputeTypeMy::D3:
+		return std::make_shared<NBodyAmpSimpleMy>(g_softeningSquared, g_dampingFactor,
+												g_deltaTime, g_particleMass);
+		break;
+	case ComputeTypeMy::Flat:
+		return std::make_shared<NBodyAmpSimpleMy>(g_softeningSquared, g_dampingFactor,
+												   g_deltaTime, g_particleMass);
 		break;
 	default:
 		assert(false);
@@ -467,7 +488,7 @@ bool CALLBACK ModifyDeviceSettings(DXUTDeviceSettings* pDeviceSettings, void* pU
 // OnFrameRender callback.  
 void CALLBACK OnFrameMove(double fTime, float fElapsedTime, void* pUserContext){
 	g_pNBody->Integrate(g_deviceData, g_numParticles);
-	//g_pNBodyMy->Integrate(g_deviceData, g_numParticles, g_Sizies);
+	g_pNBodyMy->Integrate(g_deviceData, g_numParticles, g_Sizies);
 	std::for_each(g_deviceData.begin(), g_deviceData.end(), [](std::shared_ptr<TaskData>& t){
 		std::swap(t->DataOld, t->DataNew);
 	});
@@ -610,6 +631,7 @@ HRESULT CALLBACK OnD3D11CreateDevice(ID3D11Device* pd3dDevice, const DXGI_SURFAC
 										   pBlobRenderParticlesVS->GetBufferPointer(), pBlobRenderParticlesVS->GetBufferSize(), &g_pParticleVertexLayout));
 	// Create NBody object
 	g_pNBody = NBodyFactory(g_eComputeType);
+	g_pNBodyMy = NBodyFactoryMy(g_eComputeTypeMy);
 	V_RETURN(CreateParticleBuffer(pd3dDevice));
 	V_RETURN(CreateParticlePosBuffer(pd3dDevice));
 
