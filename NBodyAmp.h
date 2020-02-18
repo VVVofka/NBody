@@ -142,7 +142,6 @@ public:
 		DataOld(new ParticlesAmpMy(m_posOld, m_intendOld, m_arrayOld)),
 		DataNew(new ParticlesAmpMy(m_posNew, m_intendNew, m_arrayNew)){}
 }; // *******************************************************************************************
-
 std::vector<std::shared_ptr<TaskData>> CreateTasks(int numParticles,
 												   accelerator_view renderView){
 	std::vector<accelerator> gpuAccelerators = AmpUtils::GetGpuAccelerators();
@@ -164,6 +163,31 @@ std::vector<std::shared_ptr<TaskData>> CreateTasks(int numParticles,
 		OutputDebugStringW(L"WARNING: No C++ AMP capable accelerators available, using REF.");
 		accelerator a = accelerator(accelerator::default_accelerator);
 		tasks.push_back(std::make_shared<TaskData>(numParticles, renderView, a));
+	}
+	AmpUtils::DebugListAccelerators(gpuAccelerators);
+	return tasks;
+}//--------------------------------------------------------------------------------------
+std::vector<std::shared_ptr<TaskDataMy>> CreateTasksMy(int numParticles, int_3 sizes,
+												   accelerator_view renderView){
+	std::vector<accelerator> gpuAccelerators = AmpUtils::GetGpuAccelerators();
+	std::vector<std::shared_ptr<TaskDataMy>> tasks;
+	tasks.reserve(gpuAccelerators.size());
+
+	if(!gpuAccelerators.empty()){
+		//  Create first accelerator attached to main view. This will attach the C++ AMP 
+		//  array<float_3> to the D3D buffer on the first GPU.
+		tasks.push_back(std::make_shared<TaskDataMy>(numParticles, sizes,  renderView, gpuAccelerators[0]));
+
+		//  All other GPUs are associated with their default view.
+		std::for_each(gpuAccelerators.cbegin() + 1, gpuAccelerators.cend(),
+					  [=, &tasks](const accelerator& d){
+			tasks.push_back(std::make_shared<TaskDataMy>(numParticles, sizes, d.default_view, d));
+		});
+	}
+	if(tasks.empty()){
+		OutputDebugStringW(L"WARNING My: No C++ AMP capable accelerators available, using REF.");
+		accelerator a = accelerator(accelerator::default_accelerator);
+		tasks.push_back(std::make_shared<TaskDataMy>(numParticles, sizes, renderView, a));
 	}
 	AmpUtils::DebugListAccelerators(gpuAccelerators);
 	return tasks;

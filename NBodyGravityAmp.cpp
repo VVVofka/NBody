@@ -306,6 +306,30 @@ HRESULT CreateParticleBuffer(ID3D11Device* pd3dDevice){
 
 	return hr;
 }//--------------------------------------------------------------------------------------
+//  Create particle buffers for use during rendering.
+HRESULT CreateParticleBufferMy(ID3D11Device* pd3dDevice){
+	HRESULT hr = S_OK;
+
+	D3D11_BUFFER_DESC bufferDesc =
+	{
+		g_maxParticles * sizeof(ParticleVertex),
+		D3D11_USAGE_DEFAULT,
+		D3D11_BIND_VERTEX_BUFFER,
+		0,
+		0
+	};
+	D3D11_SUBRESOURCE_DATA resourceData;
+	ZeroMemory(&resourceData, sizeof(D3D11_SUBRESOURCE_DATA));
+
+	std::vector<ParticleVertex> vertices(g_maxParticles);
+	std::for_each(vertices.begin(), vertices.end(), [](ParticleVertex& v){ v.color = D3DXCOLOR(1, 1, 0.2f, 1); });
+
+	resourceData.pSysMem = &vertices[0];
+	g_pParticleBuffer = nullptr;
+	V_RETURN(pd3dDevice->CreateBuffer(&bufferDesc, &resourceData, &g_pParticleBuffer));
+
+	return hr;
+}//--------------------------------------------------------------------------------------
 //  Load particles. Two clusters set to collide.
 void LoadParticles(){
 	const float centerSpread = g_Spread * 0.50f;
@@ -469,6 +493,55 @@ HRESULT CreateParticlePosBuffer(ID3D11Device* pd3dDevice){
 	V_RETURN(hr);
 	return hr;
 }//--------------------------------------------------------------------------------------
+//  Create buffers and hook them up to DirectX.
+HRESULT CreateParticlePosBufferMy(ID3D11Device* pd3dDevice){
+	HRESULT hr = S_OK;
+	accelerator_view renderView =
+		concurrency::direct3d::create_accelerator_view(reinterpret_cast<IUnknown*>(pd3dDevice));
+	g_deviceDataMy = CreateTasksMy(g_maxParticlesMy, g_Sizies, renderView);
+	LoadParticles();
+
+	g_pParticlePosOld = nullptr;
+	g_pParticlePosNew = nullptr;
+	//  Particles from GPU zero are the ones synced with the graphics buffers. 
+	//  Attach AMP array of positions to D3D buffer.
+	hr = concurrency::direct3d::get_buffer(
+		g_deviceData[0]->DataOld->pos)->QueryInterface(__uuidof(ID3D11Buffer),
+													   reinterpret_cast<LPVOID*>(&g_pParticlePosOld));
+	V_RETURN(hr);
+	hr = concurrency::direct3d::get_buffer(
+		g_deviceData[0]->DataNew->pos)->QueryInterface(__uuidof(ID3D11Buffer),
+													   reinterpret_cast<LPVOID*>(&g_pParticlePosNew));
+	V_RETURN(hr)
+		D3D11_SHADER_RESOURCE_VIEW_DESC resourceDesc;
+	ZeroMemory(&resourceDesc, sizeof(resourceDesc));
+	resourceDesc.Format = DXGI_FORMAT_R32_TYPELESS;
+	resourceDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFEREX;
+	resourceDesc.BufferEx.FirstElement = 0;
+	resourceDesc.BufferEx.NumElements = (g_maxParticles * sizeof(float_3)) / sizeof(float);
+	resourceDesc.BufferEx.Flags = D3D11_BUFFEREX_SRV_FLAG_RAW;
+	g_pParticlePosRvOld = nullptr;
+	g_pParticlePosRvNew = nullptr;
+	hr = pd3dDevice->CreateShaderResourceView(g_pParticlePosOld, &resourceDesc, &g_pParticlePosRvOld);
+	V_RETURN(hr);
+	hr = pd3dDevice->CreateShaderResourceView(g_pParticlePosNew, &resourceDesc, &g_pParticlePosRvNew);
+	V_RETURN(hr);
+
+	g_pParticlePosUavOld = nullptr;
+	g_pParticlePosUavNew = nullptr;
+	D3D11_UNORDERED_ACCESS_VIEW_DESC viewDesc;
+	ZeroMemory(&viewDesc, sizeof(D3D11_UNORDERED_ACCESS_VIEW_DESC));
+	viewDesc.Format = DXGI_FORMAT_R32_TYPELESS;
+	viewDesc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
+	viewDesc.Buffer.FirstElement = 0;
+	viewDesc.Buffer.NumElements = (g_maxParticles * sizeof(float_3)) / sizeof(float);
+	viewDesc.Buffer.Flags = D3D11_BUFFER_UAV_FLAG_RAW;
+	hr = pd3dDevice->CreateUnorderedAccessView(g_pParticlePosOld, &viewDesc, &g_pParticlePosUavOld);
+	V_RETURN(hr);
+	hr = pd3dDevice->CreateUnorderedAccessView(g_pParticlePosNew, &viewDesc, &g_pParticlePosUavNew);
+	V_RETURN(hr);
+	return hr;
+}//--------------------------------------------------------------------------------------
 //  Create render buffer. 
 bool CALLBACK ModifyDeviceSettings(DXUTDeviceSettings* pDeviceSettings, void* pUserContext){
 	assert(pDeviceSettings->ver == DXUT_D3D11_DEVICE);
@@ -495,7 +568,7 @@ bool CALLBACK ModifyDeviceSettings(DXUTDeviceSettings* pDeviceSettings, void* pU
 // OnFrameRender callback.  
 void CALLBACK OnFrameMove(double fTime, float fElapsedTime, void* pUserContext){
 	g_pNBody->Integrate(g_deviceData, g_numParticles);
-	g_pNBodyMy->Integrate(g_deviceDataMy, g_numParticles, g_Sizies);
+	g_pNBodyMy->Integrate(g_deviceDataMy, g_numParticlesMy, g_Sizies);
 	std::for_each(g_deviceData.begin(), g_deviceData.end(), [](std::shared_ptr<TaskData>& t){
 		std::swap(t->DataOld, t->DataNew);
 	});
@@ -641,6 +714,7 @@ HRESULT CALLBACK OnD3D11CreateDevice(ID3D11Device* pd3dDevice, const DXGI_SURFAC
 	g_pNBodyMy = NBodyFactoryMy(g_eComputeTypeMy);
 	V_RETURN(CreateParticleBuffer(pd3dDevice));
 	V_RETURN(CreateParticlePosBuffer(pd3dDevice));
+	V_RETURN(CreateParticlePosBufferMy(pd3dDevice));
 
 	// Setup constant buffer
 	D3D11_BUFFER_DESC bufferDesc;

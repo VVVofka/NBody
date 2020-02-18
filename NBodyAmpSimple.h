@@ -103,14 +103,10 @@ public:
 		ParticlesAmpMy particlesOut = *particleData[0]->DataNew;
 
 		extent<1> computeDomain(numParticles);
-		const float softeningSquared = m_softeningSquared;
-		const float dampingFactor = m_dampingFactor;
-		const float deltaTime = m_deltaTime;
-		const float particleMass = m_particleMass;
 
 		parallel_for_each(computeDomain, [=](index<1> idx) restrict(amp){
 			int_3 pos = particlesIn.pos[idx];
-			float_3 vel = particlesIn.intend[idx];
+			float_3 intend = particlesIn.intend[idx];
 
 			// Update current Particle using all other particles
 			//for(int j = 0; j < numParticles; ++j)
@@ -121,7 +117,8 @@ public:
 			//pos += vel * deltaTime;
 
 			particlesOut.pos[idx] = pos;
-			particlesOut.intend[idx] = vel;
+			particlesOut.intend[idx] = intend;
+			particlesOut.area[pos.get_x()][pos.get_y()][pos.get_z()] = 0;
 		});
 	} // ///////////////////////////////////////////////////////////////////////////////
 }; // *** class NBodyAmpSimple : public INBodyAmp *******************************************
