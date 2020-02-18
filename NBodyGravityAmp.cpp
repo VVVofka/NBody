@@ -442,15 +442,12 @@ std::shared_ptr<INBodyAmpMy> NBodyFactoryMy(ComputeTypeMy type){
 	case ComputeTypeMy::D3:
 		return std::make_shared<NBodyAmpSimpleMy>(g_softeningSquared, g_dampingFactor,
 												  g_deltaTime, g_particleMass);
-		break;
 	case ComputeTypeMy::Flat:
 		return std::make_shared<NBodyAmpSimpleMy>(g_softeningSquared, g_dampingFactor,
 												  g_deltaTime, g_particleMass);
-		break;
 	default:
 		assert(false);
 		return nullptr;
-		break;
 	}
 }//--------------------------------------------------------------------------------------
 //  Create buffers and hook them up to DirectX.
@@ -616,12 +613,8 @@ LRESULT CALLBACK MsgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, boo
 	g_camera.HandleMessages(hWnd, uMsg, wParam, lParam);
 
 	return 0;
-}
-
-//--------------------------------------------------------------------------------------
+}//--------------------------------------------------------------------------------------
 // Handles the GUI events
-//--------------------------------------------------------------------------------------
-
 void SetBodyText();
 
 void CALLBACK OnGUIEvent(UINT nEvent, int nControlID, CDXUTControl* pControl, void* pUserContext){
@@ -774,10 +767,8 @@ HRESULT CALLBACK OnD3D11CreateDevice(ID3D11Device* pd3dDevice, const DXGI_SURFAC
 	D3DXVECTOR3 vecEye(-g_Spread * 2, g_Spread * 4, -g_Spread * 3);
 	D3DXVECTOR3 vecAt(0.0f, 0.0f, 0.0f);
 	g_camera.SetViewParams(&vecEye, &vecAt);
-
 	return S_OK;
-}
-
+} // ////////////////////////////////////////////////////////////////////////////////////////////////////
 HRESULT CALLBACK OnD3D11ResizedSwapChain(ID3D11Device* pd3dDevice, IDXGISwapChain* pSwapChain,
 										 const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc, void* pUserContext){
 	HRESULT hr = S_OK;
