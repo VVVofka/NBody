@@ -100,7 +100,7 @@ int                                 g_numParticlesMy = (20 * 1024);
 #else
 int                                 g_numParticles = g_particleNumStepSize;
 int                                 g_numParticlesMy = g_particleNumStepSizeMy;
-int_3                               g_Sizies = int_3(1024, 512, 256);
+int_3                               g_Sizies = int_3(1024 + 1, 512 + 1, 256 + 1);
 #endif
 ComputeType                         g_eComputeType = kSingleSimple;         // Default integrator compute type
 ComputeTypeMy                       g_eComputeTypeMy = ComputeTypeMy::D3;         // Default integrator compute type
@@ -109,7 +109,7 @@ std::shared_ptr<INBodyAmpMy>        g_pNBodyMy;                             // T
 
 //  Particle data structures.
 std::vector<std::shared_ptr<TaskData>> g_deviceData;
-std::vector<std::shared_ptr<TaskData>> g_deviceDataMy;
+std::vector<std::shared_ptr<TaskDataMy>> g_deviceDataMy;
 
 //  Particle colours.
 D3DXCOLOR                           g_particleColor;
@@ -342,7 +342,7 @@ void LoadParticlesMy(int_3 sizies){
 	index<1> begin(0);
 	extent<1> end(g_maxParticlesMy);
 	for(size_t i = 0; i < g_deviceDataMy.size(); ++i){
-		std::shared_ptr<ParticlesAmpMy> pold = g_deviceDataMy[i]->DataOldMy;
+		std::shared_ptr<ParticlesAmpMy> pold = g_deviceDataMy[i]->DataOld;
 		
 		array_view<int_3, 1> posView = pold->pos.section(index<1>(begin), extent<1>(end));
 		copy(particlesMy.pos.begin(), posView);
@@ -488,7 +488,7 @@ bool CALLBACK ModifyDeviceSettings(DXUTDeviceSettings* pDeviceSettings, void* pU
 // OnFrameRender callback.  
 void CALLBACK OnFrameMove(double fTime, float fElapsedTime, void* pUserContext){
 	g_pNBody->Integrate(g_deviceData, g_numParticles);
-	g_pNBodyMy->Integrate(g_deviceData, g_numParticles, g_Sizies);
+	g_pNBodyMy->Integrate(g_deviceDataMy, g_numParticles, g_Sizies);
 	std::for_each(g_deviceData.begin(), g_deviceData.end(), [](std::shared_ptr<TaskData>& t){
 		std::swap(t->DataOld, t->DataNew);
 	});

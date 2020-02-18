@@ -47,7 +47,7 @@ public:
 	//  Integrate for all implementations. 
 	//  This takes an array of TaskData but NBodyAmpSimple and NBodyAmpTiled only use the first element.
 	virtual void Integrate(
-		const std::vector<std::shared_ptr<TaskData>>& particleData,
+		const std::vector<std::shared_ptr<TaskDataMy>>& particleData,
 		int numParticles,
 		int_3 sizies) const = 0;
 }; // *** class INBodyAmpMy *********************************************************************************
