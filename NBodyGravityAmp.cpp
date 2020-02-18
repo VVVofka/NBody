@@ -51,6 +51,7 @@ const float g_particleMass = ((6.67300e-11f * 10000.0f) * 10000.0f * 10000.0f);
 const float g_deltaTime = 0.1f;
 
 const int g_maxParticles = (57 * 1024); // Maximum number of particles in the n-body simulation.
+const int g_maxParticlesMy = (57 * 1024); // Maximum number of particles in the n-body simulation.
 const int g_particleNumStepSize = 512;  // Number of particles added for each slider tick, cannot be less than the max tile size.
 const int g_particleNumStepSizeMy = 512;  // Number of particles added for each slider tick, cannot be less than the max tile size.
 
@@ -103,6 +104,7 @@ std::shared_ptr<INBodyAmpMy>        g_pNBodyMy;                             // T
 
 //  Particle data structures.
 std::vector<std::shared_ptr<TaskData>> g_deviceData;
+std::vector<std::shared_ptr<TaskData>> g_deviceDataMy;
 
 //  Particle colours.
 D3DXCOLOR                           g_particleColor;
@@ -332,18 +334,18 @@ void LoadParticlesMy(int_3 sizies){
 
 	// Create particles in CPU memory.
 	//ParticlesCpu particles(g_maxParticles);
-	ParticlesCpuMy particlesMy(g_maxParticles);
+	ParticlesCpuMy particlesMy(g_maxParticlesMy);
 	LoadClusterParticlesMy(particlesMy, sizies);
 
-	//// Copy particles to GPU memory.
-	//index<1> begin(0);
-	//extent<1> end(g_maxParticles);
-	//for(size_t i = 0; i < g_deviceData.size(); ++i){
-	//	array_view<float_3, 1> posView = g_deviceData[i]->DataOld->pos.section(index<1>(begin), extent<1>(end));
-	//	copy(particles.pos.begin(), posView);
-	//	array_view<float_3, 1> velView = g_deviceData[i]->DataOld->vel.section(index<1>(begin), extent<1>(end));
-	//	copy(particles.vel.begin(), velView);
-	//}
+	// Copy particles to GPU memory.
+	index<1> begin(0);
+	extent<1> end(g_maxParticlesMy);
+	for(size_t i = 0; i < g_deviceDataMy.size(); ++i){
+		array_view<int_3, 1> posView = g_deviceDataMy[i]->DataOldMy->pos.section(index<1>(begin), extent<1>(end));
+		copy(particlesMy.pos.begin(), posView);
+		array_view<float_3, 1> intendView = g_deviceDataMy[i]->DataOldMy->intend.section(index<1>(begin), extent<1>(end));
+		copy(particlesMy.intend.begin(), intendView);
+	}
 } // ///////////////////////////////////////////////////////////////////////////////////////
 //  Integrator class factory. 
 std::shared_ptr<INBodyAmp> NBodyFactory(ComputeType type){
