@@ -994,6 +994,7 @@ void CALLBACK OnD3D11ReleasingSwapChain(void* pUserContext){
 	g_dialogResourceManager.OnD3D11ReleasingSwapChain();
 }//--------------------------------------------------------------------------------------
 //  Create particle buffers for use during rendering.
+#ifndef MY
 void RenderText(){
 	g_pTxtHelper->Begin();
 	g_pTxtHelper->SetInsertionPos(2, 0);
@@ -1016,6 +1017,30 @@ void RenderText(){
 
 	g_pTxtHelper->End();
 } // ////////////////////////////////////////////////////////////////////////////////////////////////////
+void RenderTextMy(){
+	g_pTxtHelperMy->Begin();
+	g_pTxtHelperMy->SetInsertionPos(2, 0);
+	g_pTxtHelperMy->SetForegroundColor(D3DXCOLOR(1.0f, 1.0f, 0.0f, 1.0f));
+	g_pTxtHelperMy->DrawTextLine(DXUTGetFrameStats(false));
+	g_pTxtHelperMy->DrawTextLine(DXUTGetDeviceStats());
+	g_pTxtHelperMy->SetInsertionPos(20, 60);
+	g_pTxtHelperMy->DrawFormattedTextLine(L"Bodies: %d", g_numParticlesMy);
+
+	g_FpsStatisticsMy.push_front(DXUTGetFPS());
+	if(g_FpsStatisticsMy.size() > 10)
+		g_FpsStatisticsMy.pop_back();
+
+	const float fps = accumulate(g_FpsStatisticsMy.begin(), g_FpsStatisticsMy.end(), 0.0f) / g_FpsStatisticsMy.size();
+
+	// Estimate the number of FLOPs based on 20 FLOPs per particle-particle interaction.
+	g_pTxtHelperMy->DrawFormattedTextLine(L"FPS:    %.2f", fps);
+	const float gflops = (g_numParticlesMy / 1000.0f) * (g_numParticlesMy / 1000.0f) * fps * 20 / 1000.0f;
+	g_pTxtHelperMy->DrawFormattedTextLine(L"GFlops: %.2f ", gflops);
+	g_pTxtHelperMy->End();
+} // ////////////////////////////////////////////////////////////////////////////////////////////////////
+#else
+#endif
+#ifndef MY
 bool RenderParticles(ID3D11DeviceContext* pd3dImmediateContext, D3DXMATRIX& view, D3DXMATRIX& projection){
 	CComPtr<ID3D11BlendState> pBlendState0;
 	CComPtr<ID3D11DepthStencilState> pDepthStencilState0;
@@ -1064,6 +1089,57 @@ bool RenderParticles(ID3D11DeviceContext* pd3dImmediateContext, D3DXMATRIX& view
 	pd3dImmediateContext->OMSetDepthStencilState(pDepthStencilState0, StencilRef0);
 	return true;
 } // ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+bool RenderParticlesMy(ID3D11DeviceContext* pd3dImmediateContext, D3DXMATRIX& view, D3DXMATRIX& projection){
+	CComPtr<ID3D11BlendState> pBlendState0;
+	CComPtr<ID3D11DepthStencilState> pDepthStencilState0;
+	UINT SampleMask0, StencilRef0;
+	D3DXCOLOR BlendFactor0;
+	pd3dImmediateContext->OMGetBlendState(&pBlendState0, &BlendFactor0.r, &SampleMask0);
+	pd3dImmediateContext->OMGetDepthStencilState(&pDepthStencilState0, &StencilRef0);
+
+	pd3dImmediateContext->VSSetShader(g_pRenderParticlesVSMy, nullptr, 0);
+	pd3dImmediateContext->GSSetShader(g_pRenderParticlesGSMy, nullptr, 0);
+	pd3dImmediateContext->PSSetShader(g_pRenderParticlesPSMy, nullptr, 0);
+
+	pd3dImmediateContext->IASetInputLayout(g_pParticleVertexLayoutMy);
+
+	// Set IA parameters, don't need to pass arrays to IASetVertexBuffers as there is only one buffer.
+	const UINT stride = sizeof(ParticleVertex);
+	const UINT offset = 0;
+	pd3dImmediateContext->IASetVertexBuffers(0, 1, &g_pParticleBufferMy.p, &stride, &offset);
+	pd3dImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
+
+	// Don't need to pass array to VSSetShaderResources as there is only one buffer.
+	pd3dImmediateContext->VSSetShaderResources(0, 1, &g_pParticlePosRvOldMy.p);
+
+	D3D11_MAPPED_SUBRESOURCE mappedResource;
+	pd3dImmediateContext->Map(g_pConstantBufferMy, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	ResourceData* pCBGS = static_cast<ResourceData*>(mappedResource.pData);
+	D3DXMatrixMultiply(&pCBGS->worldViewProj, &view, &projection);
+	D3DXMatrixInverse(&pCBGS->inverseView, nullptr, &view);
+	pCBGS->color = g_particleColor;
+	pd3dImmediateContext->Unmap(g_pConstantBufferMy, 0);
+	pd3dImmediateContext->GSSetConstantBuffers(0, 1, &g_pConstantBufferMy.p);
+	pd3dImmediateContext->PSSetShaderResources(0, 1, &g_pShaderResViewMy.p);
+	pd3dImmediateContext->PSSetSamplers(0, 1, &g_pSampleStateLinearMy.p);
+
+	pd3dImmediateContext->OMSetBlendState(g_pBlendingStateParticleMy, D3DXCOLOR(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF);
+	pd3dImmediateContext->OMSetDepthStencilState(g_pDepthStencilStateMy, 0);
+
+	pd3dImmediateContext->Draw(g_numParticlesMy, 0);
+
+	ID3D11ShaderResourceView* ppSRVnullptr[1] = {nullptr};
+	pd3dImmediateContext->VSSetShaderResources(0, 1, ppSRVnullptr);
+	pd3dImmediateContext->PSSetShaderResources(0, 1, ppSRVnullptr);
+
+	pd3dImmediateContext->GSSetShader(nullptr, nullptr, 0);
+	pd3dImmediateContext->OMSetBlendState(pBlendState0, &BlendFactor0.r, SampleMask0);
+	pd3dImmediateContext->OMSetDepthStencilState(pDepthStencilState0, StencilRef0);
+	return true;
+} // ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#else
+#endif
+#ifndef MY
 void CALLBACK OnD3D11FrameRender(ID3D11Device* pd3dDevice, ID3D11DeviceContext* pd3dImmediateContext, double fTime,
 								 float fElapsedTime, void* pUserContext){
 	// If the settings dialog is being shown, then render it instead of rendering the app's scene
@@ -1091,6 +1167,35 @@ void CALLBACK OnD3D11FrameRender(ID3D11Device* pd3dDevice, ID3D11DeviceContext* 
 	g_sampleUI.OnRender(fElapsedTime);
 	RenderText();
 }//--------------------------------------------------------------------------------------
+void CALLBACK OnD3D11FrameRenderMy(ID3D11Device* pd3dDevice, ID3D11DeviceContext* pd3dImmediateContext, double fTime,
+								 float fElapsedTime, void* pUserContext){
+	// If the settings dialog is being shown, then render it instead of rendering the app's scene
+	if(g_d3dSettingsDlgMy.IsActive()){
+		g_d3dSettingsDlgMy.OnRender(fElapsedTime);
+		return;
+	}
+	const float clearColor[4] = {0.0, 0.0, 0.0, 0.0};
+	ID3D11RenderTargetView* pRTV = DXUTGetD3D11RenderTargetView();
+	pd3dImmediateContext->ClearRenderTargetView(pRTV, clearColor);
+	ID3D11DepthStencilView* pDSV = DXUTGetD3D11DepthStencilView();
+	pd3dImmediateContext->ClearDepthStencilView(pDSV, D3D11_CLEAR_DEPTH, 1.0, 0);
+
+	D3DXMATRIX view;
+	D3DXMATRIX projection;
+
+	// Get the projection & view matrix from the camera class
+	projection = *g_cameraMy.GetProjMatrix();
+	view = *g_cameraMy.GetViewMatrix();
+
+	// Render the particles
+	RenderParticlesMy(pd3dImmediateContext, view, projection);
+
+	g_HUDMy.OnRender(fElapsedTime);
+	g_sampleUIMy.OnRender(fElapsedTime);
+	RenderTextMy();
+}//--------------------------------------------------------------------------------------
+#else
+#endif
 // This callback function will be called immediately after the Direct3D device has 
 // been destroyed, which generally happens as a result of application termination or 
 // windowed/full screen toggles. Resources created in the OnD3D11CreateDevice callback 
@@ -1103,7 +1208,7 @@ void CALLBACK OnD3D11DestroyDevice(void* pUserContext){
 } // ////////////////////////////////////////////////////////////////////////////////////
 void CALLBACK OnD3D11DestroyDeviceMy(void* pUserContext){
 	g_dialogResourceManagerMy.OnD3D11DestroyDevice();
-	g_d3dSettingsDlg.OnD3D11DestroyDevice();
+	g_d3dSettingsDlgMy.OnD3D11DestroyDevice();
 	DXUTGetGlobalResourceCache().OnDestroyDevice();
 } // ////////////////////////////////////////////////////////////////////////////////////
 #else
