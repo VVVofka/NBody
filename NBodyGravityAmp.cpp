@@ -126,7 +126,7 @@ int                                 g_numParticlesMy = (20 * 1024);
 #else
 int                                 g_numParticles = g_particleNumStepSize;
 int                                 g_numParticlesMy = g_particleNumStepSizeMy;
-int_3                               g_Sizes = int_3(1024 + 1, 512 + 1, 256 + 1);
+int_3                               g_SizesMy = int_3(1024 + 1, 512 + 1, 256 + 1);
 #endif
 ComputeType                         g_eComputeType = kSingleSimple;         // Default integrator compute type
 ComputeTypeMy                       g_eComputeTypeMy = ComputeTypeMy::D3;         // Default integrator compute type
@@ -233,7 +233,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 	DXUTMainLoop();                      // Enter into the DXUT render loop
 	return DXUTGetExitCode();
 }//--------------------------------------------------------------------------------------
-// Initialize the app 
+// Initialize the app void InitApp(){
+#ifndef MY
 void InitApp(){
 	g_d3dSettingsDlg.Init(&g_dialogResourceManager);
 	g_HUD.Init(&g_dialogResourceManager);
@@ -314,24 +315,24 @@ void InitApp(){
 }//--------------------------------------------------------------------------------------
 // Initialize the app 
 void InitAppMy(){
-	g_d3dSettingsDlg.Init(&g_dialogResourceManager);
-	g_HUD.Init(&g_dialogResourceManager);
-	g_sampleUI.Init(&g_dialogResourceManager);
+	g_d3dSettingsDlgMy.Init(&g_dialogResourceManagerMy);
+	g_HUDMy.Init(&g_dialogResourceManagerMy);
+	g_sampleUIMy.Init(&g_dialogResourceManagerMy);
 
-	g_HUD.SetCallback(OnGUIEvent);
+	g_HUDMy.SetCallback(OnGUIEventMy);
 	int y = 10;
-	g_HUD.AddButton(IDC_TOGGLEFULLSCREEN, L"Toggle full screen", 0, y, 170, 23);
-	g_HUD.AddButton(IDC_CHANGEDEVICE, L"Change device (F2)", 0, y += 26, 170, 23, VK_F2);
-	g_HUD.AddButton(IDC_RESETPARTICLES, L"Reset particles", 0, y += 26, 170, 22, VK_F2);
+	g_HUDMy.AddButton(IDC_TOGGLEFULLSCREEN, L"Toggle full screen", 0, y, 170, 23);
+	g_HUDMy.AddButton(IDC_CHANGEDEVICE, L"Change device (F2)", 0, y += 26, 170, 23, VK_F2);
+	g_HUDMy.AddButton(IDC_RESETPARTICLES, L"Reset particles", 0, y += 26, 170, 22, VK_F2);
 
 	WCHAR szTemp[256];
-	swprintf_s(szTemp, L"Bodies: %d %d", g_numParticles, g_numParticles);
-	//swprintf_s(szTemp, L"Bodies: %d %d", g_numParticles, g_numParticlesMy);
-	g_HUD.AddStatic(IDC_NBODIES_LABEL, szTemp, -20, y += 34, 125, 22);
-	g_HUD.AddSlider(IDC_NBODIES_SLIDER, -20, y += 34, 170, 22, 1, g_maxParticles / g_particleNumStepSize);
+	swprintf_s(szTemp, L"Bodies: %d %d", g_numParticlesMy, g_numParticlesMy);
+	g_HUDMy.AddStatic(IDC_NBODIES_LABEL, szTemp, -20, y += 34, 125, 22);
+	g_HUDMy.AddSlider(IDC_NBODIES_SLIDER, -20, y += 34, 170, 22, 1, g_maxParticlesMy / g_particleNumStepSizeMy);
 	CDXUTComboBox* pComboBox = nullptr;
-	g_HUD.AddComboBox(IDC_COMPUTETYPECOMBO, -133, y += 34, 300, 26, L'G', false, &pComboBox);
+	g_HUDMy.AddComboBox(IDC_COMPUTETYPECOMBO, -133, y += 34, 300, 26, L'G', false, &pComboBox);
 
+	// TODO: mode 
 	// The ordering of these names must match the FrameProcessorType enumeration.
 	std::wstring processorNames[] = {
 		std::wstring(L"C++ AMP Simple Model "),                // kCpuSingle
@@ -354,30 +355,29 @@ void InitAppMy(){
 	//  Otherwise add a REF accelerator and display warning.
 	for(int i = kSingleSimple; i <= kSingleTile512; ++i)
 		pComboBox->AddItem(processorNames[i].c_str(), nullptr);
-	g_eComputeType = kSingleTile256;
+	g_eComputeTypeMy = ComputeTypeMy::D3;
 
 	//  If there us more than one GPU then allow the user to use them together.
 	if(AmpUtils::GetGpuAccelerators().size() >= 2){
 		for(int i = kMultiTile64; i <= kMultiTile512; ++i)
 			pComboBox->AddItem(processorNames[i].c_str(), nullptr);
-		g_eComputeType = kMultiTile256;
+		g_eComputeTypeMy = ComputeTypeMy::D3;
 	}
-	g_HUD.GetComboBox(IDC_COMPUTETYPECOMBO)->SetSelectedByData((void*)g_eComputeType);
-	pComboBox->SetSelectedByIndex(g_eComputeType);
+	g_HUDMy.GetComboBox(IDC_COMPUTETYPECOMBO)->SetSelectedByData((void*)g_eComputeTypeMy);
+	pComboBox->SetSelectedByIndex(g_eComputeTypeMy);
 
-	//g_HUD.GetSlider(IDC_NBODIES_SLIDER)->SetValue((g_numParticlesMy / g_particleNumStepSizeMy));
-	g_HUD.GetSlider(IDC_NBODIES_SLIDER)->SetValue((g_numParticles / g_particleNumStepSize));
-	g_particleColors.resize(kMultiTile512 + 1);
-	g_particleColors[kSingleSimple] = D3DXCOLOR(0.05f, 1.0f, 0.05f, 1.0f);
-	g_particleColors[kSingleTile64] = D3DXCOLOR(0.05f, 1.0f, 0.05f, 1.0f);
-	g_particleColors[kSingleTile128] = D3DXCOLOR(0.05f, 1.0f, 0.05f, 1.0f);
-	g_particleColors[kSingleTile256] = D3DXCOLOR(0.05f, 1.0f, 0.05f, 1.0f);
-	g_particleColors[kSingleTile512] = D3DXCOLOR(0.05f, 1.0f, 0.05f, 1.0f);
-	g_particleColors[kMultiTile64] = D3DXCOLOR(0.05f, 0.05f, 1.0f, 1.0f);
-	g_particleColors[kMultiTile128] = D3DXCOLOR(0.05f, 0.05f, 1.0f, 1.0f);
-	g_particleColors[kMultiTile256] = D3DXCOLOR(0.05f, 0.05f, 1.0f, 1.0f);
-	g_particleColors[kMultiTile512] = D3DXCOLOR(0.05f, 0.05f, 1.0f, 1.0f);
-	g_particleColor = g_particleColors[g_eComputeType];
+	g_HUDMy.GetSlider(IDC_NBODIES_SLIDER)->SetValue((g_numParticlesMy / g_particleNumStepSizeMy));
+	g_particleColorsMy.resize(kMultiTile512 + 1);
+	g_particleColorsMy[kSingleSimple] = D3DXCOLOR(0.05f, 1.0f, 0.05f, 1.0f);
+	g_particleColorsMy[kSingleTile64] = D3DXCOLOR(0.05f, 1.0f, 0.05f, 1.0f);
+	g_particleColorsMy[kSingleTile128] = D3DXCOLOR(0.05f, 1.0f, 0.05f, 1.0f);
+	g_particleColorsMy[kSingleTile256] = D3DXCOLOR(0.05f, 1.0f, 0.05f, 1.0f);
+	g_particleColorsMy[kSingleTile512] = D3DXCOLOR(0.05f, 1.0f, 0.05f, 1.0f);
+	g_particleColorsMy[kMultiTile64] = D3DXCOLOR(0.05f, 0.05f, 1.0f, 1.0f);
+	g_particleColorsMy[kMultiTile128] = D3DXCOLOR(0.05f, 0.05f, 1.0f, 1.0f);
+	g_particleColorsMy[kMultiTile256] = D3DXCOLOR(0.05f, 0.05f, 1.0f, 1.0f);
+	g_particleColorsMy[kMultiTile512] = D3DXCOLOR(0.05f, 0.05f, 1.0f, 1.0f);
+	g_particleColorMy = g_particleColorsMy[g_eComputeTypeMy];
 
 	g_sampleUI.SetCallback(OnGUIEvent);
 
@@ -393,7 +393,10 @@ void InitAppMy(){
 	OutputDebugStringW(L"Forcing application to use the WARP accelerator");
 #endif
 }//--------------------------------------------------------------------------------------
-//  Create particle buffers for use during rendering.
+#else // !MY
+#endif // !MY
+#ifndef MY
+ //  Create particle buffers for use during rendering.
 HRESULT CreateParticleBuffer(ID3D11Device* pd3dDevice){
 	HRESULT hr = S_OK;
 
@@ -417,13 +420,11 @@ HRESULT CreateParticleBuffer(ID3D11Device* pd3dDevice){
 
 	return hr;
 }//--------------------------------------------------------------------------------------
-//  Create particle buffers for use during rendering.
 HRESULT CreateParticleBufferMy(ID3D11Device* pd3dDevice){
 	HRESULT hr = S_OK;
-
 	D3D11_BUFFER_DESC bufferDesc =
 	{
-		g_maxParticles * sizeof(ParticleVertex),
+		g_maxParticlesMy * sizeof(ParticleVertex),
 		D3D11_USAGE_DEFAULT,
 		D3D11_BIND_VERTEX_BUFFER,
 		0,
@@ -432,15 +433,17 @@ HRESULT CreateParticleBufferMy(ID3D11Device* pd3dDevice){
 	D3D11_SUBRESOURCE_DATA resourceData;
 	ZeroMemory(&resourceData, sizeof(D3D11_SUBRESOURCE_DATA));
 
-	std::vector<ParticleVertex> vertices(g_maxParticles);
+	std::vector<ParticleVertex> vertices(g_maxParticlesMy);
 	std::for_each(vertices.begin(), vertices.end(), [](ParticleVertex& v){ v.color = D3DXCOLOR(1, 1, 0.2f, 1); });
 
 	resourceData.pSysMem = &vertices[0];
-	g_pParticleBuffer = nullptr;
-	V_RETURN(pd3dDevice->CreateBuffer(&bufferDesc, &resourceData, &g_pParticleBuffer));
-
+	g_pParticleBufferMy = nullptr;
+	V_RETURN(pd3dDevice->CreateBuffer(&bufferDesc, &resourceData, &g_pParticleBufferMy));
 	return hr;
 }//--------------------------------------------------------------------------------------
+#else // !MY
+#endif // !MY
+#ifndef MY
 //  Load particles. Two clusters set to collide.
 void LoadParticles(){
 	const float centerSpread = g_Spread * 0.50f;
@@ -470,8 +473,8 @@ void LoadParticles(){
 } // ///////////////////////////////////////////////////////////////////////////////////////
 void LoadParticlesMy(int_3 sizes){
 	// Create particles in CPU memory.
-	ParticlesCpuMy particlesMy(g_maxParticlesMy, sizes);
-	LoadClusterParticlesMy(particlesMy, sizes);
+	ParticlesCpuMy particles(g_maxParticlesMy, sizes);
+	LoadClusterParticlesMy(particles, sizes);
 
 	// Copy particles to GPU memory.
 	index<1> begin(0);
@@ -484,15 +487,18 @@ void LoadParticlesMy(int_3 sizes){
 		std::shared_ptr<ParticlesAmpMy> pold = g_deviceDataMy[i]->DataOld;
 
 		array_view<int_3, 1> posView = pold->pos.section(index<1>(begin), extent<1>(end));
-		copy(particlesMy.pos.begin(), posView);
+		copy(particles.pos.begin(), posView);
 
 		array_view<float_3, 1> intendView = pold->intend.section(index<1>(begin), extent<1>(end));
-		copy(particlesMy.intend.begin(), intendView);
+		copy(particles.intend.begin(), intendView);
 
 		array_view<int, 3> areaView = pold->area.section(index<3>(beginArea), extent<3>(endArea));
-		copy(particlesMy.area.data(), areaView);
+		copy(particles.area.data(), areaView);
 	} // for(size_t i = 0; i < g_deviceDataMy.size(); ++i)
 } // ///////////////////////////////////////////////////////////////////////////////////////
+#else // !MY
+#endif // !MY
+#ifndef MY
 //  Integrator class factory. 
 std::shared_ptr<INBodyAmp> NBodyFactory(ComputeType type){
 	switch(type){
@@ -542,16 +548,19 @@ std::shared_ptr<INBodyAmp> NBodyFactory(ComputeType type){
 std::shared_ptr<INBodyAmpMy> NBodyFactoryMy(ComputeTypeMy type){
 	switch(type){
 	case ComputeTypeMy::D3:
-		return std::make_shared<NBodyAmpSimpleMy>(g_softeningSquared, g_dampingFactor,
-												  g_deltaTime, g_particleMass);
+		return std::make_shared<NBodyAmpSimpleMy>(g_softeningSquaredMy, g_dampingFactorMy,
+												  g_deltaTimeMy, g_particleMassMy);
 	case ComputeTypeMy::Flat:
-		return std::make_shared<NBodyAmpSimpleMy>(g_softeningSquared, g_dampingFactor,
-												  g_deltaTime, g_particleMass);
+		return std::make_shared<NBodyAmpSimpleMy>(g_softeningSquaredMy, g_dampingFactorMy,
+												  g_deltaTimeMy, g_particleMassMy);
 	default:
 		assert(false);
 		return nullptr;
 	}
 }//--------------------------------------------------------------------------------------
+#else // !MY
+#endif // !MY
+#ifndef MY
 //  Create buffers and hook them up to DirectX.
 HRESULT CreateParticlePosBuffer(ID3D11Device* pd3dDevice){
 	HRESULT hr = S_OK;
@@ -601,13 +610,12 @@ HRESULT CreateParticlePosBuffer(ID3D11Device* pd3dDevice){
 	V_RETURN(hr);
 	return hr;
 }//--------------------------------------------------------------------------------------
-//  Create buffers and hook them up to DirectX.
 HRESULT CreateParticlePosBufferMy(ID3D11Device* pd3dDevice){
 	HRESULT hr = S_OK;
 	accelerator_view renderView =
 		concurrency::direct3d::create_accelerator_view(reinterpret_cast<IUnknown*>(pd3dDevice));
-	g_deviceDataMy = CreateTasksMy(g_maxParticlesMy, g_Sizes, renderView);
-	LoadParticlesMy(g_Sizes);
+	g_deviceDataMy = CreateTasksMy(g_maxParticlesMy, g_SizesMy, renderView);
+	LoadParticlesMy(g_SizesMy);
 
 	g_pParticlePosOldMy = nullptr;
 	g_pParticlePosNewMy = nullptr;
@@ -650,14 +658,15 @@ HRESULT CreateParticlePosBufferMy(ID3D11Device* pd3dDevice){
 	V_RETURN(hr);
 	return hr;
 }//--------------------------------------------------------------------------------------
+#else // !MY
+#endif // !MY
 //  Create render buffer. 
+#ifndef MY
 bool CALLBACK ModifyDeviceSettings(DXUTDeviceSettings* pDeviceSettings, void* pUserContext){
 	assert(pDeviceSettings->ver == DXUT_D3D11_DEVICE);
-
 	// Disable vsync
 	pDeviceSettings->d3d11.SyncInterval = 0;
 	g_d3dSettingsDlg.GetDialogControl()->GetComboBox(DXUTSETTINGSDLG_PRESENT_INTERVAL)->SetEnabled(false);
-
 	// For the first device created if it is a REF device, optionally display a warning dialog box
 	static bool s_IsFirstTime = true;
 	if(s_IsFirstTime){
@@ -670,6 +679,26 @@ bool CALLBACK ModifyDeviceSettings(DXUTDeviceSettings* pDeviceSettings, void* pU
 	}
 	return true;
 }//--------------------------------------------------------------------------------------
+bool CALLBACK ModifyDeviceSettingsMy(DXUTDeviceSettings* pDeviceSettings, void* pUserContext){
+	assert(pDeviceSettings->ver == DXUT_D3D11_DEVICE);
+	// Disable vsync
+	pDeviceSettings->d3d11.SyncInterval = 0;
+	g_d3dSettingsDlgMy.GetDialogControl()->GetComboBox(DXUTSETTINGSDLG_PRESENT_INTERVAL)->SetEnabled(false);
+	// For the first device created if it is a REF device, optionally display a warning dialog box
+	static bool s_IsFirstTime = true;
+	if(s_IsFirstTime){
+		s_IsFirstTime = false;
+		if((DXUT_D3D9_DEVICE == pDeviceSettings->ver && pDeviceSettings->d3d9.DeviceType == D3DDEVTYPE_REF) ||
+			(DXUT_D3D11_DEVICE == pDeviceSettings->ver &&
+			 pDeviceSettings->d3d11.DriverType == D3D_DRIVER_TYPE_REFERENCE)){
+			DXUTDisplaySwitchingToREFWarning(pDeviceSettings->ver);
+		}
+	}
+	return true;
+}//--------------------------------------------------------------------------------------
+#else // !MY
+#endif // !MY
+#ifndef MY
 // This callback function will be called once at the beginning of every frame. This is the
 // best location for your application to handle updates to the scene, but is not 
 // intended to contain actual rendering calls, which should instead be placed in the 
@@ -691,17 +720,19 @@ void CALLBACK OnFrameMove(double fTime, float fElapsedTime, void* pUserContext){
 // intended to contain actual rendering calls, which should instead be placed in the 
 // OnFrameRender callback.  
 void CALLBACK OnFrameMoveMy(double fTime, float fElapsedTime, void* pUserContext){
-	g_pNBodyMy->Integrate(g_deviceDataMy, g_numParticlesMy, g_Sizes);
-	std::for_each(g_deviceData.begin(), g_deviceData.end(), [](std::shared_ptr<TaskData>& t){
+	g_pNBodyMy->Integrate(g_deviceDataMy, g_numParticlesMy, g_SizesMy);
+	std::for_each(g_deviceDataMy.begin(), g_deviceDataMy.end(), [](std::shared_ptr<TaskDataMy>& t){
 		std::swap(t->DataOld, t->DataNew);
 	});
-	std::swap(g_pParticlePosOld, g_pParticlePosNew);
-	std::swap(g_pParticlePosRvOld, g_pParticlePosRvNew);
-	std::swap(g_pParticlePosUavOld, g_pParticlePosUavNew);
+	std::swap(g_pParticlePosOldMy, g_pParticlePosNewMy);
+	std::swap(g_pParticlePosRvOldMy, g_pParticlePosRvNewMy);
+	std::swap(g_pParticlePosUavOldMy, g_pParticlePosUavNewMy);
 
 	// Update the camera's position based on user input 
-	g_camera.FrameMove(fElapsedTime);
+	g_cameraMy.FrameMove(fElapsedTime);
 }//--------------------------------------------------------------------------------------
+#else // !MY
+#endif // !MY
 #ifndef MY
  // Before handling window messages, DXUT passes incoming windows 
 // messages to the application through this callback function. If the application sets 
@@ -801,7 +832,7 @@ void CALLBACK OnGUIEventMy(UINT nEvent, int nControlID, CDXUTControl* pControl, 
 		g_d3dSettingsDlgMy.SetActive(!g_d3dSettingsDlgMy.IsActive());
 		break;
 	case IDC_RESETPARTICLES:
-		LoadParticlesMy();
+		LoadParticlesMy(g_SizesMy);
 		break;
 	case IDC_COMPUTETYPECOMBO:
 	{

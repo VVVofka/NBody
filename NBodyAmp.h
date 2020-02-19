@@ -89,8 +89,6 @@ public:
 	accelerator Accelerator;
 	std::shared_ptr<ParticlesAmp> DataOld;      // These hold references to the data
 	std::shared_ptr<ParticlesAmp> DataNew;
-	std::shared_ptr<ParticlesAmpMy> DataOldMy;      // These hold references to the data
-	std::shared_ptr<ParticlesAmpMy> DataNewMy;
 private:
 	array<float_3, 1> m_posOld;                 // These hold the actual data.
 	array<float_3, 1> m_posNew;
