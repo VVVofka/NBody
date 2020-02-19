@@ -62,12 +62,28 @@ CDXUTDialog                         g_sampleUI;                 // dialog for sa
 std::unique_ptr<CDXUTTextHelper>    g_pTxtHelper;
 std::deque<float>                   g_FpsStatistics;
 
+CDXUTDialogResourceManager          g_dialogResourceManagerMy;    // manager for shared resources of dialogs
+CModelViewerCamera                  g_cameraMy;                   // A model viewing camera
+CD3DSettingsDlg                     g_d3dSettingsDlgMy;           // Device settings dialog
+CDXUTDialog                         g_HUDMy;                      // dialog for standard controls
+CDXUTDialog                         g_sampleUIMy;                 // dialog for sample specific controls
+std::unique_ptr<CDXUTTextHelper>    g_pTxtHelperMy;
+std::deque<float>                   g_FpsStatisticsMy;
+
+
 CComPtr<ID3D11VertexShader>         g_pRenderParticlesVS;
 CComPtr<ID3D11GeometryShader>       g_pRenderParticlesGS;
 CComPtr<ID3D11PixelShader>          g_pRenderParticlesPS;
 CComPtr<ID3D11SamplerState>         g_pSampleStateLinear;
 CComPtr<ID3D11BlendState>           g_pBlendingStateParticle;
 CComPtr<ID3D11DepthStencilState>    g_pDepthStencilState;
+
+CComPtr<ID3D11VertexShader>         g_pRenderParticlesVSMy;
+CComPtr<ID3D11GeometryShader>       g_pRenderParticlesGSMy;
+CComPtr<ID3D11PixelShader>          g_pRenderParticlesPSMy;
+CComPtr<ID3D11SamplerState>         g_pSampleStateLinearMy;
+CComPtr<ID3D11BlendState>           g_pBlendingStateParticleMy;
+CComPtr<ID3D11DepthStencilState>    g_pDepthStencilStateMy;
 
 
 CComPtr<ID3D11Buffer>               g_pParticlePosOld;
@@ -87,11 +103,13 @@ CComPtr<ID3D11UnorderedAccessView>  g_pParticlePosUavNewMy;
 
 CComPtr<ID3D11Buffer>               g_pParticleBuffer;
 CComPtr<ID3D11InputLayout>          g_pParticleVertexLayout;
-
 CComPtr<ID3D11Buffer>               g_pConstantBuffer;
-
 CComPtr<ID3D11ShaderResourceView>   g_pShaderResView;
 
+CComPtr<ID3D11Buffer>               g_pParticleBufferMy;
+CComPtr<ID3D11InputLayout>          g_pParticleVertexLayoutMy;
+CComPtr<ID3D11Buffer>               g_pConstantBufferMy;
+CComPtr<ID3D11ShaderResourceView>   g_pShaderResViewMy;
 //--------------------------------------------------------------------------------------
 // Nbody functionality 
 //--------------------------------------------------------------------------------------
@@ -646,7 +664,22 @@ bool CALLBACK ModifyDeviceSettings(DXUTDeviceSettings* pDeviceSettings, void* pU
 // OnFrameRender callback.  
 void CALLBACK OnFrameMove(double fTime, float fElapsedTime, void* pUserContext){
 	g_pNBody->Integrate(g_deviceData, g_numParticles);
-	//g_pNBodyMy->Integrate(g_deviceDataMy, g_numParticlesMy, g_Sizes);
+	std::for_each(g_deviceData.begin(), g_deviceData.end(), [](std::shared_ptr<TaskData>& t){
+		std::swap(t->DataOld, t->DataNew);
+	});
+	std::swap(g_pParticlePosOld, g_pParticlePosNew);
+	std::swap(g_pParticlePosRvOld, g_pParticlePosRvNew);
+	std::swap(g_pParticlePosUavOld, g_pParticlePosUavNew);
+
+	// Update the camera's position based on user input 
+	g_camera.FrameMove(fElapsedTime);
+}//--------------------------------------------------------------------------------------
+// This callback function will be called once at the beginning of every frame. This is the
+// best location for your application to handle updates to the scene, but is not 
+// intended to contain actual rendering calls, which should instead be placed in the 
+// OnFrameRender callback.  
+void CALLBACK OnFrameMoveMy(double fTime, float fElapsedTime, void* pUserContext){
+	g_pNBodyMy->Integrate(g_deviceDataMy, g_numParticlesMy, g_Sizes);
 	std::for_each(g_deviceData.begin(), g_deviceData.end(), [](std::shared_ptr<TaskData>& t){
 		std::swap(t->DataOld, t->DataNew);
 	});
@@ -1062,8 +1095,16 @@ void CALLBACK OnD3D11FrameRender(ID3D11Device* pd3dDevice, ID3D11DeviceContext* 
 // been destroyed, which generally happens as a result of application termination or 
 // windowed/full screen toggles. Resources created in the OnD3D11CreateDevice callback 
 // should be released here, which generally includes all D3DPOOL_MANAGED resources. 
+#ifndef MY
 void CALLBACK OnD3D11DestroyDevice(void* pUserContext){
 	g_dialogResourceManager.OnD3D11DestroyDevice();
 	g_d3dSettingsDlg.OnD3D11DestroyDevice();
 	DXUTGetGlobalResourceCache().OnDestroyDevice();
 } // ////////////////////////////////////////////////////////////////////////////////////
+void CALLBACK OnD3D11DestroyDeviceMy(void* pUserContext){
+	g_dialogResourceManagerMy.OnD3D11DestroyDevice();
+	g_d3dSettingsDlg.OnD3D11DestroyDevice();
+	DXUTGetGlobalResourceCache().OnDestroyDevice();
+} // ////////////////////////////////////////////////////////////////////////////////////
+#else
+#endif
