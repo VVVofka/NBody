@@ -156,6 +156,7 @@ std::vector<D3DCOLOR>               g_particleColorsMy;
 #define IDC_FPS_TEXT                10
 //--------------------------------------------------------------------------------------
 // Forward declarations 
+#ifndef MY
 bool CALLBACK ModifyDeviceSettings(DXUTDeviceSettings* pDeviceSettings, void* pUserContext);
 void CALLBACK OnFrameMove(double fTime, float fElapsedTime, void* pUserContext);
 LRESULT CALLBACK MsgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, bool* pbNoFurtherProcessing,
@@ -175,6 +176,27 @@ void CALLBACK OnD3D11FrameRender(ID3D11Device* pd3dDevice, ID3D11DeviceContext* 
 								 float fElapsedTime, void* pUserContext);
 void InitApp();
 void RenderText();
+//#else  // !MY
+bool CALLBACK ModifyDeviceSettingsMy(DXUTDeviceSettings* pDeviceSettings, void* pUserContext);
+void CALLBACK OnFrameMoveMy(double fTime, float fElapsedTime, void* pUserContext);
+LRESULT CALLBACK MsgProcMy(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, bool* pbNoFurtherProcessing,
+						 void* pUserContext);
+void CALLBACK OnGUIEventMy(UINT nEvent, int nControlID, CDXUTControl* pControl, void* pUserContext);
+//void CorrectNumberOfParticles();
+inline void SetBodyTextMy();
+//bool CALLBACK IsD3D11DeviceAcceptableMy(const CD3D11EnumAdapterInfo* AdapterInfo, UINT Output, const CD3D11EnumDeviceInfo* DeviceInfo,
+//									  DXGI_FORMAT BackBufferFormat, bool bWindowed, void* pUserContext);
+HRESULT CALLBACK OnD3D11CreateDeviceMy(ID3D11Device* pd3dDevice, const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc,
+									 void* pUserContext);
+HRESULT CALLBACK OnD3D11ResizedSwapChainMy(ID3D11Device* pd3dDevice, IDXGISwapChain* pSwapChain,
+										 const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc, void* pUserContext);
+void CALLBACK OnD3D11ReleasingSwapChainMy(void* pUserContext);
+void CALLBACK OnD3D11DestroyDeviceMy(void* pUserContext);
+void CALLBACK OnD3D11FrameRenderMy(ID3D11Device* pd3dDevice, ID3D11DeviceContext* pd3dImmediateContext, double fTime,
+								 float fElapsedTime, void* pUserContext);
+void InitAppMy();
+void RenderTextMy();
+#endif
 //--------------------------------------------------------------------------------------
 // Helper function to compile an hlsl shader from file, 
 // its binary compiled code is returned
@@ -367,19 +389,12 @@ void InitAppMy(){
 	pComboBox->SetSelectedByIndex(g_eComputeTypeMy);
 
 	g_HUDMy.GetSlider(IDC_NBODIES_SLIDER)->SetValue((g_numParticlesMy / g_particleNumStepSizeMy));
-	g_particleColorsMy.resize(kMultiTile512 + 1);
-	g_particleColorsMy[kSingleSimple] = D3DXCOLOR(0.05f, 1.0f, 0.05f, 1.0f);
-	g_particleColorsMy[kSingleTile64] = D3DXCOLOR(0.05f, 1.0f, 0.05f, 1.0f);
-	g_particleColorsMy[kSingleTile128] = D3DXCOLOR(0.05f, 1.0f, 0.05f, 1.0f);
-	g_particleColorsMy[kSingleTile256] = D3DXCOLOR(0.05f, 1.0f, 0.05f, 1.0f);
-	g_particleColorsMy[kSingleTile512] = D3DXCOLOR(0.05f, 1.0f, 0.05f, 1.0f);
-	g_particleColorsMy[kMultiTile64] = D3DXCOLOR(0.05f, 0.05f, 1.0f, 1.0f);
-	g_particleColorsMy[kMultiTile128] = D3DXCOLOR(0.05f, 0.05f, 1.0f, 1.0f);
-	g_particleColorsMy[kMultiTile256] = D3DXCOLOR(0.05f, 0.05f, 1.0f, 1.0f);
-	g_particleColorsMy[kMultiTile512] = D3DXCOLOR(0.05f, 0.05f, 1.0f, 1.0f);
+	g_particleColorsMy.resize(ComputeTypeMy::D3 + 1);
+	g_particleColorsMy[ComputeTypeMy::D3] = D3DXCOLOR(0.05f, 1.0f, 0.05f, 1.0f);
+	g_particleColorsMy[ComputeTypeMy::Flat] = D3DXCOLOR(0.05f, 1.0f, 0.05f, 1.0f);
 	g_particleColorMy = g_particleColorsMy[g_eComputeTypeMy];
 
-	g_sampleUI.SetCallback(OnGUIEvent);
+	g_sampleUIMy.SetCallback(OnGUIEventMy);
 
 #if (defined(DEBUG) || defined(_DEBUG))
 	if(AmpUtils::GetGpuAccelerators().empty())
