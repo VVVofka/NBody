@@ -1,15 +1,7 @@
 // Microsoft Press
 // C++ AMP: Accelerated Massive Parallelism with Microsoft Visual C++
-//===============================================================================
 // Copyright (c) 2012-2013 Ade Miller & Kate Gregory.  All rights reserved.
-// This code released under the terms of the 
 // Microsoft Public License (Ms-PL), http://ampbook.codeplex.com/license.
-//
-// THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF
-// ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO
-// THE IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A
-// PARTICULAR PURPOSE.
-//===============================================================================
 #include <memory>
 #include <string>
 #include <deque>
@@ -224,7 +216,7 @@ void InitApp(){
 	g_HUD.AddButton(IDC_RESETPARTICLES, L"Reset particles", 0, y += 26, 170, 22, VK_F2);
 
 	WCHAR szTemp[256];
-	swprintf_s(szTemp, L"Bodies: %d %d", g_numParticles, g_numParticlesMy);
+	swprintf_s(szTemp, L"Bodies: %d %d", g_numParticles, g_numParticles);
 	g_HUD.AddStatic(IDC_NBODIES_LABEL, szTemp, -20, y += 34, 125, 22);
 	g_HUD.AddSlider(IDC_NBODIES_SLIDER, -20, y += 34, 170, 22, 1, g_maxParticles / g_particleNumStepSize);
 	CDXUTComboBox* pComboBox = nullptr;
@@ -263,8 +255,88 @@ void InitApp(){
 	g_HUD.GetComboBox(IDC_COMPUTETYPECOMBO)->SetSelectedByData((void*)g_eComputeType);
 	pComboBox->SetSelectedByIndex(g_eComputeType);
 
-	g_HUD.GetSlider(IDC_NBODIES_SLIDER)->SetValue((g_numParticlesMy / g_particleNumStepSizeMy));
-	//g_HUD.GetSlider(IDC_NBODIES_SLIDER)->SetValue((g_numParticles / g_particleNumStepSize));
+	g_HUD.GetSlider(IDC_NBODIES_SLIDER)->SetValue((g_numParticles / g_particleNumStepSize));
+	g_particleColors.resize(kMultiTile512 + 1);
+	g_particleColors[kSingleSimple] = D3DXCOLOR(0.05f, 1.0f, 0.05f, 1.0f);
+	g_particleColors[kSingleTile64] = D3DXCOLOR(0.05f, 1.0f, 0.05f, 1.0f);
+	g_particleColors[kSingleTile128] = D3DXCOLOR(0.05f, 1.0f, 0.05f, 1.0f);
+	g_particleColors[kSingleTile256] = D3DXCOLOR(0.05f, 1.0f, 0.05f, 1.0f);
+	g_particleColors[kSingleTile512] = D3DXCOLOR(0.05f, 1.0f, 0.05f, 1.0f);
+	g_particleColors[kMultiTile64] = D3DXCOLOR(0.05f, 0.05f, 1.0f, 1.0f);
+	g_particleColors[kMultiTile128] = D3DXCOLOR(0.05f, 0.05f, 1.0f, 1.0f);
+	g_particleColors[kMultiTile256] = D3DXCOLOR(0.05f, 0.05f, 1.0f, 1.0f);
+	g_particleColors[kMultiTile512] = D3DXCOLOR(0.05f, 0.05f, 1.0f, 1.0f);
+	g_particleColor = g_particleColors[g_eComputeType];
+
+	g_sampleUI.SetCallback(OnGUIEvent);
+
+#if (defined(DEBUG) || defined(_DEBUG))
+	if(AmpUtils::GetGpuAccelerators().empty())
+		MessageBox(DXUTGetHWND(), L"No C++ AMP GPU hardware accelerator detected,\nusing the REF or WARP accelerator.\n\nTo see better performance run on C++ AMP\nenabled hardware.",
+				   L"No C++ AMP Hardware Accelerator Detected",
+				   MB_ICONEXCLAMATION);
+#endif
+#ifdef FORCE_WARP
+	//  Force use of the Warp accelerator, even if a better GPU exists. For testing only.
+	accelerator::set_default(accelerator::direct3d_warp);
+	OutputDebugStringW(L"Forcing application to use the WARP accelerator");
+#endif
+}//--------------------------------------------------------------------------------------
+// Initialize the app 
+void InitAppMy(){
+	g_d3dSettingsDlg.Init(&g_dialogResourceManager);
+	g_HUD.Init(&g_dialogResourceManager);
+	g_sampleUI.Init(&g_dialogResourceManager);
+
+	g_HUD.SetCallback(OnGUIEvent);
+	int y = 10;
+	g_HUD.AddButton(IDC_TOGGLEFULLSCREEN, L"Toggle full screen", 0, y, 170, 23);
+	g_HUD.AddButton(IDC_CHANGEDEVICE, L"Change device (F2)", 0, y += 26, 170, 23, VK_F2);
+	g_HUD.AddButton(IDC_RESETPARTICLES, L"Reset particles", 0, y += 26, 170, 22, VK_F2);
+
+	WCHAR szTemp[256];
+	swprintf_s(szTemp, L"Bodies: %d %d", g_numParticles, g_numParticles);
+	//swprintf_s(szTemp, L"Bodies: %d %d", g_numParticles, g_numParticlesMy);
+	g_HUD.AddStatic(IDC_NBODIES_LABEL, szTemp, -20, y += 34, 125, 22);
+	g_HUD.AddSlider(IDC_NBODIES_SLIDER, -20, y += 34, 170, 22, 1, g_maxParticles / g_particleNumStepSize);
+	CDXUTComboBox* pComboBox = nullptr;
+	g_HUD.AddComboBox(IDC_COMPUTETYPECOMBO, -133, y += 34, 300, 26, L'G', false, &pComboBox);
+
+	// The ordering of these names must match the FrameProcessorType enumeration.
+	std::wstring processorNames[] = {
+		std::wstring(L"C++ AMP Simple Model "),                // kCpuSingle
+		std::wstring(L"C++ AMP Tiled Model 64 "),
+		std::wstring(L"C++ AMP Tiled Model 128 "),
+		std::wstring(L"C++ AMP Tiled Model 256 "),
+		std::wstring(L"C++ AMP Tiled Model 512 "),             // kSingleTile512
+		std::wstring(L"C++ AMP Tiled Model 64: xx GPUs"),      // kMultiTile64
+		std::wstring(L"C++ AMP Tiled Model 128:xx GPUs"),
+		std::wstring(L"C++ AMP Tiled Model 256:xx GPUs"),
+		std::wstring(L"C++ AMP Tiled Model 512:xx GPUs")       // kMultiTile512
+	};
+	WCHAR buf[3];
+	if(_itow_s(static_cast<int>(AmpUtils::GetGpuAccelerators().size()), buf, 3, 10) == 0)
+		for(int i = kMultiTile64; i <= kMultiTile512; ++i)
+			processorNames[i].replace(24, 2, buf);
+	std::wstring path = accelerator(accelerator::default_accelerator).device_path;
+
+	//  If there is a GPU accelerator then use it. 
+	//  Otherwise add a REF accelerator and display warning.
+	for(int i = kSingleSimple; i <= kSingleTile512; ++i)
+		pComboBox->AddItem(processorNames[i].c_str(), nullptr);
+	g_eComputeType = kSingleTile256;
+
+	//  If there us more than one GPU then allow the user to use them together.
+	if(AmpUtils::GetGpuAccelerators().size() >= 2){
+		for(int i = kMultiTile64; i <= kMultiTile512; ++i)
+			pComboBox->AddItem(processorNames[i].c_str(), nullptr);
+		g_eComputeType = kMultiTile256;
+	}
+	g_HUD.GetComboBox(IDC_COMPUTETYPECOMBO)->SetSelectedByData((void*)g_eComputeType);
+	pComboBox->SetSelectedByIndex(g_eComputeType);
+
+	//g_HUD.GetSlider(IDC_NBODIES_SLIDER)->SetValue((g_numParticlesMy / g_particleNumStepSizeMy));
+	g_HUD.GetSlider(IDC_NBODIES_SLIDER)->SetValue((g_numParticles / g_particleNumStepSize));
 	g_particleColors.resize(kMultiTile512 + 1);
 	g_particleColors[kSingleSimple] = D3DXCOLOR(0.05f, 1.0f, 0.05f, 1.0f);
 	g_particleColors[kSingleTile64] = D3DXCOLOR(0.05f, 1.0f, 0.05f, 1.0f);
@@ -574,7 +646,7 @@ bool CALLBACK ModifyDeviceSettings(DXUTDeviceSettings* pDeviceSettings, void* pU
 // OnFrameRender callback.  
 void CALLBACK OnFrameMove(double fTime, float fElapsedTime, void* pUserContext){
 	g_pNBody->Integrate(g_deviceData, g_numParticles);
-	g_pNBodyMy->Integrate(g_deviceDataMy, g_numParticlesMy, g_Sizes);
+	//g_pNBodyMy->Integrate(g_deviceDataMy, g_numParticlesMy, g_Sizes);
 	std::for_each(g_deviceData.begin(), g_deviceData.end(), [](std::shared_ptr<TaskData>& t){
 		std::swap(t->DataOld, t->DataNew);
 	});
@@ -677,6 +749,102 @@ bool CALLBACK IsD3D11DeviceAcceptable(const CD3D11EnumAdapterInfo* AdapterInfo, 
 // resources need to be reloaded whenever the device is destroyed. Resources created  
 // here should be released in the OnD3D11DestroyDevice callback. 
 HRESULT CALLBACK OnD3D11CreateDevice(ID3D11Device* pd3dDevice, const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc,
+									 void* pUserContext){
+	HRESULT hr = S_OK;
+
+	D3D11_FEATURE_DATA_D3D10_X_HARDWARE_OPTIONS ho;
+	V_RETURN(pd3dDevice->CheckFeatureSupport(D3D11_FEATURE_D3D10_X_HARDWARE_OPTIONS, &ho, sizeof(ho)));
+
+	CComPtr<ID3D11DeviceContext> pd3dImmediateContext = DXUTGetD3D11DeviceContext();
+	V_RETURN(g_dialogResourceManager.OnD3D11CreateDevice(pd3dDevice, pd3dImmediateContext));
+	V_RETURN(g_d3dSettingsDlg.OnD3D11CreateDevice(pd3dDevice));
+	g_pTxtHelper = std::unique_ptr<CDXUTTextHelper>(new CDXUTTextHelper(pd3dDevice, pd3dImmediateContext, &g_dialogResourceManager, 15));
+
+	CComPtr<ID3DBlob> pBlobRenderParticlesVS;
+	CComPtr<ID3DBlob> pBlobRenderParticlesGS;
+	CComPtr<ID3DBlob> pBlobRenderParticlesPS;
+
+	// Create the shaders
+	V_RETURN(CompileShaderFromFile(L"ParticleDrawGpu.hlsl", "VSParticleDraw", "vs_4_0", &pBlobRenderParticlesVS));
+	V_RETURN(CompileShaderFromFile(L"ParticleDrawGpu.hlsl", "GSParticleDraw", "gs_4_0", &pBlobRenderParticlesGS));
+	V_RETURN(CompileShaderFromFile(L"ParticleDrawGpu.hlsl", "PSParticleDraw", "ps_4_0", &pBlobRenderParticlesPS));
+	g_pRenderParticlesVS = nullptr;
+	g_pRenderParticlesGS = nullptr;
+	g_pRenderParticlesPS = nullptr;
+	V_RETURN(pd3dDevice->CreateVertexShader(pBlobRenderParticlesVS->GetBufferPointer(), pBlobRenderParticlesVS->GetBufferSize(), nullptr, &g_pRenderParticlesVS));
+	V_RETURN(pd3dDevice->CreateGeometryShader(pBlobRenderParticlesGS->GetBufferPointer(), pBlobRenderParticlesGS->GetBufferSize(), nullptr, &g_pRenderParticlesGS));
+	V_RETURN(pd3dDevice->CreatePixelShader(pBlobRenderParticlesPS->GetBufferPointer(), pBlobRenderParticlesPS->GetBufferSize(), nullptr, &g_pRenderParticlesPS));
+
+	// Create our vertex input layout
+	const D3D11_INPUT_ELEMENT_DESC layout[] =
+	{
+		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+	};
+	g_pParticleVertexLayout = nullptr;
+	V_RETURN(pd3dDevice->CreateInputLayout(layout, sizeof(layout) / sizeof(layout[0]),
+										   pBlobRenderParticlesVS->GetBufferPointer(), pBlobRenderParticlesVS->GetBufferSize(), &g_pParticleVertexLayout));
+	// Create NBody object
+	g_pNBody = NBodyFactory(g_eComputeType);
+	V_RETURN(CreateParticleBuffer(pd3dDevice));
+	V_RETURN(CreateParticlePosBuffer(pd3dDevice));
+
+	// Setup constant buffer
+	D3D11_BUFFER_DESC bufferDesc;
+	bufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	bufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	bufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	bufferDesc.MiscFlags = 0;
+	bufferDesc.ByteWidth = sizeof(ResourceData);
+	g_pConstantBuffer = nullptr;
+	V_RETURN(pd3dDevice->CreateBuffer(&bufferDesc, nullptr, &g_pConstantBuffer));
+
+	// Load the Particle Texture
+	WCHAR str[MAX_PATH] = {};
+	V_RETURN(DXUTFindDXSDKMediaFileCch(str, MAX_PATH, L"UI\\Particle.dds"));
+	g_pShaderResView = nullptr;
+	V_RETURN(D3DX11CreateShaderResourceViewFromFile(pd3dDevice, str, nullptr, nullptr, &g_pShaderResView, nullptr));
+
+	D3D11_SAMPLER_DESC samplerDesc;
+	ZeroMemory(&samplerDesc, sizeof(samplerDesc));
+	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	g_pSampleStateLinear = nullptr;
+	V_RETURN(pd3dDevice->CreateSamplerState(&samplerDesc, &g_pSampleStateLinear));
+
+	D3D11_BLEND_DESC blendStateDesc;
+	ZeroMemory(&blendStateDesc, sizeof(blendStateDesc));
+	blendStateDesc.RenderTarget[0].BlendEnable = TRUE;
+	blendStateDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+	blendStateDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
+	blendStateDesc.RenderTarget[0].DestBlend = D3D11_BLEND_ONE;
+	blendStateDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+	blendStateDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ZERO;
+	blendStateDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
+	blendStateDesc.RenderTarget[0].RenderTargetWriteMask = 0x0F;
+	g_pBlendingStateParticle = nullptr;
+	V_RETURN(pd3dDevice->CreateBlendState(&blendStateDesc, &g_pBlendingStateParticle));
+
+	D3D11_DEPTH_STENCIL_DESC depthStencilDesc;
+	ZeroMemory(&depthStencilDesc, sizeof(depthStencilDesc));
+	depthStencilDesc.DepthEnable = false;
+	depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+	g_pDepthStencilState = nullptr;
+	pd3dDevice->CreateDepthStencilState(&depthStencilDesc, &g_pDepthStencilState);
+
+	// Setup the camera's view parameters
+	D3DXVECTOR3 vecEye(-g_Spread * 2, g_Spread * 4, -g_Spread * 3);
+	D3DXVECTOR3 vecAt(0.0f, 0.0f, 0.0f);
+	g_camera.SetViewParams(&vecEye, &vecAt);
+	return S_OK;
+} // ////////////////////////////////////////////////////////////////////////////////////////////////////
+// This callback function will be called immediately after the Direct3D device has been 
+// created, which will happen during application initialization and windowed/full screen 
+// toggles. This is the best location to Create D3DPOOL_MANAGED resources since these 
+// resources need to be reloaded whenever the device is destroyed. Resources created  
+// here should be released in the OnD3D11DestroyDevice callback. 
+HRESULT CALLBACK OnD3D11CreateDeviceMy(ID3D11Device* pd3dDevice, const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc,
 									 void* pUserContext){
 	HRESULT hr = S_OK;
 
