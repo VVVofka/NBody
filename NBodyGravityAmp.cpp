@@ -23,6 +23,7 @@
 #include "NBodyAmpMultiTiled.h"
 #include "resource.h"
 
+#ifndef MY
 enum ComputeType{
 	kSingleSimple = 0,
 	kSingleTile64,
@@ -36,31 +37,35 @@ enum ComputeType{
 	kMultiTile256,
 	kMultiTile512
 };//--------------------------------------------------------------------------------------
+//#else  // !MY
 enum ComputeTypeMy{
 	Flat = 0,
 	D3
 };//--------------------------------------------------------------------------------------
+#endif  // !MY
 // Global constants.
+#ifndef MY
 const float g_softeningSquared = 0.0000015625f;
 const float g_dampingFactor = 0.9995f;
 const float g_particleMass = ((6.67300e-11f * 10000.0f) * 10000.0f * 10000.0f);
 const float g_deltaTime = 0.1f;
 
+const int g_maxParticles = (57 * 1024); // Maximum number of particles in the n-body simulation.
+const int g_particleNumStepSize = 512;  // Number of particles added for each slider tick, cannot be less than the max tile size.
+const float g_Spread = 400.0f;          // Separation between the two clusters.
+//#else  // !MY
 const float g_softeningSquaredMy = 0.0000015625f;
 const float g_dampingFactorMy = 0.9995f;
 const float g_particleMassMy = ((6.67300e-11f * 10000.0f) * 10000.0f * 10000.0f);
 const float g_deltaTimeMy = 0.1f;
 
-
-const int g_maxParticles = (57 * 1024); // Maximum number of particles in the n-body simulation.
-const int g_particleNumStepSize = 512;  // Number of particles added for each slider tick, cannot be less than the max tile size.
-const float g_Spread = 400.0f;          // Separation between the two clusters.
-
 const int g_maxParticlesMy = (57 * 1024); // Maximum number of particles in the n-body simulation.
 const int g_particleNumStepSizeMy = 512;  // Number of particles added for each slider tick, cannot be less than the max tile size.
 const float g_SpreadMy = 400.0f;          // Separation between the two clusters.
-//--------------------------------------------------------------------------------------
-// Global variables
+#endif  // !MY
+
+	// Global variables
+#ifndef MY
 CDXUTDialogResourceManager          g_dialogResourceManager;    // manager for shared resources of dialogs
 CModelViewerCamera                  g_camera;                   // A model viewing camera
 CD3DSettingsDlg                     g_d3dSettingsDlg;           // Device settings dialog
@@ -69,29 +74,12 @@ CDXUTDialog                         g_sampleUI;                 // dialog for sa
 std::unique_ptr<CDXUTTextHelper>    g_pTxtHelper;
 std::deque<float>                   g_FpsStatistics;
 
-CDXUTDialogResourceManager          g_dialogResourceManagerMy;    // manager for shared resources of dialogs
-CModelViewerCamera                  g_cameraMy;                   // A model viewing camera
-CD3DSettingsDlg                     g_d3dSettingsDlgMy;           // Device settings dialog
-CDXUTDialog                         g_HUDMy;                      // dialog for standard controls
-CDXUTDialog                         g_sampleUIMy;                 // dialog for sample specific controls
-std::unique_ptr<CDXUTTextHelper>    g_pTxtHelperMy;
-std::deque<float>                   g_FpsStatisticsMy;
-
-
 CComPtr<ID3D11VertexShader>         g_pRenderParticlesVS;
 CComPtr<ID3D11GeometryShader>       g_pRenderParticlesGS;
 CComPtr<ID3D11PixelShader>          g_pRenderParticlesPS;
 CComPtr<ID3D11SamplerState>         g_pSampleStateLinear;
 CComPtr<ID3D11BlendState>           g_pBlendingStateParticle;
 CComPtr<ID3D11DepthStencilState>    g_pDepthStencilState;
-
-CComPtr<ID3D11VertexShader>         g_pRenderParticlesVSMy;
-CComPtr<ID3D11GeometryShader>       g_pRenderParticlesGSMy;
-CComPtr<ID3D11PixelShader>          g_pRenderParticlesPSMy;
-CComPtr<ID3D11SamplerState>         g_pSampleStateLinearMy;
-CComPtr<ID3D11BlendState>           g_pBlendingStateParticleMy;
-CComPtr<ID3D11DepthStencilState>    g_pDepthStencilStateMy;
-
 
 CComPtr<ID3D11Buffer>               g_pParticlePosOld;
 CComPtr<ID3D11Buffer>               g_pParticlePosNew;
@@ -100,6 +88,26 @@ CComPtr<ID3D11ShaderResourceView>   g_pParticlePosRvNew;
 CComPtr<ID3D11UnorderedAccessView>  g_pParticlePosUavOld;
 CComPtr<ID3D11UnorderedAccessView>  g_pParticlePosUavNew;
 
+CComPtr<ID3D11Buffer>               g_pParticleBuffer;
+CComPtr<ID3D11InputLayout>          g_pParticleVertexLayout;
+CComPtr<ID3D11Buffer>               g_pConstantBuffer;
+CComPtr<ID3D11ShaderResourceView>   g_pShaderResView;
+//#else  // !MY
+CDXUTDialogResourceManager          g_dialogResourceManagerMy;    // manager for shared resources of dialogs
+CModelViewerCamera                  g_cameraMy;                   // A model viewing camera
+CD3DSettingsDlg                     g_d3dSettingsDlgMy;           // Device settings dialog
+CDXUTDialog                         g_HUDMy;                      // dialog for standard controls
+CDXUTDialog                         g_sampleUIMy;                 // dialog for sample specific controls
+std::unique_ptr<CDXUTTextHelper>    g_pTxtHelperMy;
+std::deque<float>                   g_FpsStatisticsMy;
+
+CComPtr<ID3D11VertexShader>         g_pRenderParticlesVSMy;
+CComPtr<ID3D11GeometryShader>       g_pRenderParticlesGSMy;
+CComPtr<ID3D11PixelShader>          g_pRenderParticlesPSMy;
+CComPtr<ID3D11SamplerState>         g_pSampleStateLinearMy;
+CComPtr<ID3D11BlendState>           g_pBlendingStateParticleMy;
+CComPtr<ID3D11DepthStencilState>    g_pDepthStencilStateMy;
+
 CComPtr<ID3D11Buffer>               g_pParticlePosOldMy;
 CComPtr<ID3D11Buffer>               g_pParticlePosNewMy;
 CComPtr<ID3D11ShaderResourceView>   g_pParticlePosRvOldMy;
@@ -107,41 +115,44 @@ CComPtr<ID3D11ShaderResourceView>   g_pParticlePosRvNewMy;
 CComPtr<ID3D11UnorderedAccessView>  g_pParticlePosUavOldMy;
 CComPtr<ID3D11UnorderedAccessView>  g_pParticlePosUavNewMy;
 
-
-CComPtr<ID3D11Buffer>               g_pParticleBuffer;
-CComPtr<ID3D11InputLayout>          g_pParticleVertexLayout;
-CComPtr<ID3D11Buffer>               g_pConstantBuffer;
-CComPtr<ID3D11ShaderResourceView>   g_pShaderResView;
-
 CComPtr<ID3D11Buffer>               g_pParticleBufferMy;
 CComPtr<ID3D11InputLayout>          g_pParticleVertexLayoutMy;
 CComPtr<ID3D11Buffer>               g_pConstantBufferMy;
 CComPtr<ID3D11ShaderResourceView>   g_pShaderResViewMy;
-//--------------------------------------------------------------------------------------
+#endif  // !MY
 // Nbody functionality 
-//--------------------------------------------------------------------------------------
+#ifndef MY
 #if !(defined(DEBUG) || defined(_DEBUG))
 int                                 g_numParticles = (20 * 1024);           // The current number of particles in the n-body simulation
-int                                 g_numParticlesMy = (20 * 1024);
 #else
 int                                 g_numParticles = g_particleNumStepSize;
-int                                 g_numParticlesMy = g_particleNumStepSizeMy;
-int_3                               g_SizesMy = int_3(1024 + 1, 512 + 1, 256 + 1);
 #endif
 ComputeType                         g_eComputeType = kSingleSimple;         // Default integrator compute type
-ComputeTypeMy                       g_eComputeTypeMy = ComputeTypeMy::D3;         // Default integrator compute type
 std::shared_ptr<INBodyAmp>          g_pNBody;                               // The current integrator
-std::shared_ptr<INBodyAmpMy>        g_pNBodyMy;                             // The current integrator
 
 //  Particle data structures.
 std::vector<std::shared_ptr<TaskData>> g_deviceData;
-std::vector<std::shared_ptr<TaskDataMy>> g_deviceDataMy;
 
 //  Particle colours.
 D3DXCOLOR                           g_particleColor;
 std::vector<D3DCOLOR>               g_particleColors;
+//#else  // !MY
+#if !(defined(DEBUG) || defined(_DEBUG))
+int                                 g_numParticlesMy = (20 * 1024);
+#else
+int                                 g_numParticlesMy = g_particleNumStepSizeMy;
+int_3                               g_SizesMy = int_3(1024 + 1, 512 + 1, 256 + 1);
+#endif
+ComputeTypeMy                       g_eComputeTypeMy = ComputeTypeMy::D3;         // Default integrator compute type
+std::shared_ptr<INBodyAmpMy>        g_pNBodyMy;                             // The current integrator
+
+																			//  Particle data structures.
+std::vector<std::shared_ptr<TaskDataMy>> g_deviceDataMy;
+//  Particle colours.
 D3DXCOLOR                           g_particleColorMy;
+
 std::vector<D3DCOLOR>               g_particleColorsMy;
+#endif // !M
 //--------------------------------------------------------------------------------------
 // UI control IDs
 #define IDC_TOGGLEFULLSCREEN        1
