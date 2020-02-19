@@ -23,6 +23,18 @@
 #include "NBodyAmpMultiTiled.h"
 #include "resource.h"
 
+// UI control IDs
+#define IDC_TOGGLEFULLSCREEN        1
+#define IDC_TOGGLEREF               3
+#define IDC_CHANGEDEVICE            4
+#define IDC_RESETPARTICLES          5
+
+#define IDC_COMPUTETYPECOMBO        6
+#define IDC_NBODIES_LABEL           7
+#define IDC_NBODIES_SLIDER          8
+#define IDC_NBODIES_TEXT            9
+#define IDC_FPS_TEXT                10
+
 #ifndef MY
 enum ComputeType{
 	kSingleSimple = 0,
@@ -63,8 +75,7 @@ const int g_maxParticlesMy = (57 * 1024); // Maximum number of particles in the 
 const int g_particleNumStepSizeMy = 512;  // Number of particles added for each slider tick, cannot be less than the max tile size.
 const float g_SpreadMy = 400.0f;          // Separation between the two clusters.
 #endif  // !MY
-
-	// Global variables
+// Global variables
 #ifndef MY
 CDXUTDialogResourceManager          g_dialogResourceManager;    // manager for shared resources of dialogs
 CModelViewerCamera                  g_camera;                   // A model viewing camera
@@ -153,19 +164,6 @@ D3DXCOLOR                           g_particleColorMy;
 
 std::vector<D3DCOLOR>               g_particleColorsMy;
 #endif // !M
-//--------------------------------------------------------------------------------------
-// UI control IDs
-#define IDC_TOGGLEFULLSCREEN        1
-#define IDC_TOGGLEREF               3
-#define IDC_CHANGEDEVICE            4
-#define IDC_RESETPARTICLES          5
-
-#define IDC_COMPUTETYPECOMBO        6
-#define IDC_NBODIES_LABEL           7
-#define IDC_NBODIES_SLIDER          8
-#define IDC_NBODIES_TEXT            9
-#define IDC_FPS_TEXT                10
-//--------------------------------------------------------------------------------------
 // Forward declarations 
 #ifndef MY
 bool CALLBACK ModifyDeviceSettings(DXUTDeviceSettings* pDeviceSettings, void* pUserContext);
@@ -228,19 +226,28 @@ HRESULT CompileShaderFromFile(WCHAR* szFileName, LPCSTR szEntryPoint, LPCSTR szS
 // Entry point to the program. Initializes everything and goes into a message processing 
 // loop. Idle time is used to render the scene.
 //--------------------------------------------------------------------------------------
+
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow){
 	// NOTE: This application leaks memory on shutdown due DLL unload ordering issues.
-	//
 	// {619} normal block at 0x00000011ADD99E10, 152 bytes long.
 	//  Data: <                > 10 9F D9 AD 11 00 00 00 E0 B6 CE AF 11 00 00 00 
-	//
 	// See the C++ AMP blog for further details.
 
 	// Enable run-time memory check for debug builds.
 #if defined(DEBUG) || defined(_DEBUG)
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 #endif
-
+#ifndef MY
+int WINAPI WinMainNonMy(HINSTANCE hInstance,HINSTANCE hPrevInstance,LPWSTR lpCmdLine,int nShowCmd);
+	return WinMainNonMy(hInstance,  hPrevInstance,  lpCmdLine,  nCmdShow);
+//#else // !MY
+int WINAPI WinMainMy(HINSTANCE hInstance,HINSTANCE hPrevInstance,LPWSTR lpCmdLine,int nShowCmd);
+	return WinMainMy(hInstance, hPrevInstance, lpCmdLine, nCmdShow);
+#endif // !MY
+}//--------------------------------------------------------------------------------------
+// WinMainMy
+#ifndef MY
+int WINAPI WinMainNonMy(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow) {
 	DXUTSetCallbackDeviceChanging(ModifyDeviceSettings);
 	DXUTSetCallbackMsgProc(MsgProc);
 	DXUTSetCallbackFrameMove(OnFrameMove);
@@ -251,9 +258,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 	DXUTSetCallbackD3D11FrameRender(OnD3D11FrameRender);
 	DXUTSetCallbackD3D11SwapChainReleasing(OnD3D11ReleasingSwapChain);
 	DXUTSetCallbackD3D11DeviceDestroyed(OnD3D11DestroyDevice);
-
 	InitApp();
-
 	//DXUTInit( true, true, L"-forceref" ); // Force Create a ref device so that feature level D3D_FEATURE_LEVEL_11_0 is guaranteed
 	DXUTInit(true, true);                 // Use this line instead to try to Create a hardware device
 
@@ -263,7 +268,32 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 	DXUTMainLoop();                      // Enter into the DXUT render loop
 	return DXUTGetExitCode();
 }//--------------------------------------------------------------------------------------
-// Initialize the app void InitApp(){
+//#else // !MY
+int WINAPI WinMainMy(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow) {
+	DXUTSetCallbackDeviceChanging(ModifyDeviceSettingsMy);
+	DXUTSetCallbackMsgProc(MsgProcMy);
+	DXUTSetCallbackFrameMove(OnFrameMoveMy);
+
+	DXUTSetCallbackD3D11DeviceAcceptable(IsD3D11DeviceAcceptable); // IsD3D11DeviceAcceptable - nonMy!
+	DXUTSetCallbackD3D11DeviceCreated(OnD3D11CreateDeviceMy);
+	DXUTSetCallbackD3D11SwapChainResized(OnD3D11ResizedSwapChainMy);
+	DXUTSetCallbackD3D11FrameRender(OnD3D11FrameRenderMy);
+	DXUTSetCallbackD3D11SwapChainReleasing(OnD3D11ReleasingSwapChainMy);
+	DXUTSetCallbackD3D11DeviceDestroyed(OnD3D11DestroyDeviceMy);
+
+	InitAppMy();
+
+	//DXUTInit( true, true, L"-forceref" ); // Force Create a ref device so that feature level D3D_FEATURE_LEVEL_11_0 is guaranteed
+	DXUTInit(true, true);                 // Use this line instead to try to Create a hardware device
+
+	DXUTSetCursorSettings(true, true); // Show the cursor and clip it when in full screen
+	DXUTCreateWindow(L"C++ AMP Layers");
+	DXUTCreateDevice(D3D_FEATURE_LEVEL_11_0, true, 1280, 800);
+	DXUTMainLoop();                      // Enter into the DXUT render loop
+	return DXUTGetExitCode();
+}//--------------------------------------------------------------------------------------
+#endif // !MY
+ // Initialize the app void InitApp(){
 #ifndef MY
 void InitApp(){
 	g_d3dSettingsDlg.Init(&g_dialogResourceManager);
@@ -1163,8 +1193,7 @@ void CALLBACK OnD3D11ReleasingSwapChainMy(void* pUserContext){
 	g_dialogResourceManagerMy.OnD3D11ReleasingSwapChain();
 }//--------------------------------------------------------------------------------------
 #endif //!MY
-//  Create particle buffers for use during rendering.
-// void RenderText()
+//  Create particle buffers for use during rendering. void RenderText()
 #ifndef MY
 void RenderText(){
 	g_pTxtHelper->Begin();
@@ -1334,8 +1363,7 @@ void CALLBACK OnD3D11FrameRender(ID3D11Device* pd3dDevice, ID3D11DeviceContext* 
 	projection = *g_camera.GetProjMatrix();
 	view = *g_camera.GetViewMatrix();
 
-	// Render the particles
-	RenderParticles(pd3dImmediateContext, view, projection);
+	RenderParticles(pd3dImmediateContext, view, projection);	// Render the particles
 
 	g_HUD.OnRender(fElapsedTime);
 	g_sampleUI.OnRender(fElapsedTime);
@@ -1362,8 +1390,7 @@ void CALLBACK OnD3D11FrameRenderMy(ID3D11Device* pd3dDevice, ID3D11DeviceContext
 	projection = *g_cameraMy.GetProjMatrix();
 	view = *g_cameraMy.GetViewMatrix();
 
-	// Render the particles
-	RenderParticlesMy(pd3dImmediateContext, view, projection);
+	RenderParticlesMy(pd3dImmediateContext, view, projection);	// Render the particles
 
 	g_HUDMy.OnRender(fElapsedTime);
 	g_sampleUIMy.OnRender(fElapsedTime);
@@ -1380,7 +1407,7 @@ void CALLBACK OnD3D11DestroyDevice(void* pUserContext){
 	g_d3dSettingsDlg.OnD3D11DestroyDevice();
 	DXUTGetGlobalResourceCache().OnDestroyDevice();
 } // ////////////////////////////////////////////////////////////////////////////////////
-//#else  // !MY
+//#else // !MY
 void CALLBACK OnD3D11DestroyDeviceMy(void* pUserContext){
 	g_dialogResourceManagerMy.OnD3D11DestroyDevice();
 	g_d3dSettingsDlgMy.OnD3D11DestroyDevice();
