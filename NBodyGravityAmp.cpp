@@ -970,6 +970,7 @@ HRESULT CALLBACK OnD3D11CreateDeviceMy(ID3D11Device* pd3dDevice, const DXGI_SURF
 	g_camera.SetViewParams(&vecEye, &vecAt);
 	return S_OK;
 } // ////////////////////////////////////////////////////////////////////////////////////////////////////
+#ifndef MY
 HRESULT CALLBACK OnD3D11ResizedSwapChain(ID3D11Device* pd3dDevice, IDXGISwapChain* pSwapChain,
 										 const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc, void* pUserContext){
 	HRESULT hr = S_OK;
@@ -990,9 +991,36 @@ HRESULT CALLBACK OnD3D11ResizedSwapChain(ID3D11Device* pd3dDevice, IDXGISwapChai
 
 	return hr;
 } // //////////////////////////////////////////////////////////////////////////////////////////////////////////////
+HRESULT CALLBACK OnD3D11ResizedSwapChainMy(ID3D11Device* pd3dDevice, IDXGISwapChain* pSwapChain,
+										 const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc, void* pUserContext){
+	HRESULT hr = S_OK;
+
+	V_RETURN(g_dialogResourceManagerMy.OnD3D11ResizedSwapChain(pd3dDevice, pBackBufferSurfaceDesc));
+	V_RETURN(g_d3dSettingsDlgMy.OnD3D11ResizedSwapChain(pd3dDevice, pBackBufferSurfaceDesc));
+
+	// Setup the camera's projection parameters
+	float aspect = pBackBufferSurfaceDesc->Width / (FLOAT)pBackBufferSurfaceDesc->Height;
+	g_cameraMy.SetProjParams(D3DX_PI / 4, aspect, 10.0f, 500000.0f);
+	g_cameraMy.SetWindow(pBackBufferSurfaceDesc->Width, pBackBufferSurfaceDesc->Height);
+	g_cameraMy.SetButtonMasks(0, MOUSE_WHEEL, MOUSE_LEFT_BUTTON | MOUSE_MIDDLE_BUTTON | MOUSE_RIGHT_BUTTON);
+
+	g_HUDMy.SetLocation(pBackBufferSurfaceDesc->Width - 170, 0);
+	g_HUDMy.SetSize(170, 170);
+	g_sampleUIMy.SetLocation(pBackBufferSurfaceDesc->Width - 170, pBackBufferSurfaceDesc->Height - 300);
+	g_sampleUIMy.SetSize(170, 300);
+	return hr;
+} // //////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#else
+#endif
+#ifndef MY
 void CALLBACK OnD3D11ReleasingSwapChain(void* pUserContext){
 	g_dialogResourceManager.OnD3D11ReleasingSwapChain();
 }//--------------------------------------------------------------------------------------
+void CALLBACK OnD3D11ReleasingSwapChainMy(void* pUserContext){
+	g_dialogResourceManagerMy.OnD3D11ReleasingSwapChain();
+}//--------------------------------------------------------------------------------------
+#else
+#endif
 //  Create particle buffers for use during rendering.
 #ifndef MY
 void RenderText(){
