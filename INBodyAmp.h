@@ -13,8 +13,8 @@
 //--------------------------------------------------------------------------------------
 //  Each class implements at least one overload of the Integrate method, for single or multi-accelerator.
 //  They take one or more TaskData structs containing the data relating to all particles.
+#ifndef MY
 struct TaskData;
-
 class INBodyAmp{
 public:
 	//  Each integrator exposes a tile size. This is used by the main client code to 
@@ -28,8 +28,8 @@ public:
 		int numParticles) const = 0;
 }; // *** class INBodyAmp *********************************************************************************
 
+//#else // !MY
 struct TaskDataMy;
-
 class INBodyAmpMy{
 public:
 	//  Each integrator exposes a tile size. This is used by the main client code to 
@@ -43,3 +43,4 @@ public:
 		int numParticles,
 		int_3 sizies) const = 0;
 }; // *** class INBodyAmpMy *********************************************************************************
+#endif // !MY
