@@ -46,12 +46,19 @@ const float g_dampingFactor = 0.9995f;
 const float g_particleMass = ((6.67300e-11f * 10000.0f) * 10000.0f * 10000.0f);
 const float g_deltaTime = 0.1f;
 
-const int g_maxParticles = (57 * 1024); // Maximum number of particles in the n-body simulation.
-const int g_maxParticlesMy = (57 * 1024); // Maximum number of particles in the n-body simulation.
-const int g_particleNumStepSize = 512;  // Number of particles added for each slider tick, cannot be less than the max tile size.
-const int g_particleNumStepSizeMy = 512;  // Number of particles added for each slider tick, cannot be less than the max tile size.
+const float g_softeningSquaredMy = 0.0000015625f;
+const float g_dampingFactorMy = 0.9995f;
+const float g_particleMassMy = ((6.67300e-11f * 10000.0f) * 10000.0f * 10000.0f);
+const float g_deltaTimeMy = 0.1f;
 
+
+const int g_maxParticles = (57 * 1024); // Maximum number of particles in the n-body simulation.
+const int g_particleNumStepSize = 512;  // Number of particles added for each slider tick, cannot be less than the max tile size.
 const float g_Spread = 400.0f;          // Separation between the two clusters.
+
+const int g_maxParticlesMy = (57 * 1024); // Maximum number of particles in the n-body simulation.
+const int g_particleNumStepSizeMy = 512;  // Number of particles added for each slider tick, cannot be less than the max tile size.
+const float g_SpreadMy = 400.0f;          // Separation between the two clusters.
 //--------------------------------------------------------------------------------------
 // Global variables
 CDXUTDialogResourceManager          g_dialogResourceManager;    // manager for shared resources of dialogs
@@ -133,6 +140,8 @@ std::vector<std::shared_ptr<TaskDataMy>> g_deviceDataMy;
 //  Particle colours.
 D3DXCOLOR                           g_particleColor;
 std::vector<D3DCOLOR>               g_particleColors;
+D3DXCOLOR                           g_particleColorMy;
+std::vector<D3DCOLOR>               g_particleColorsMy;
 //--------------------------------------------------------------------------------------
 // UI control IDs
 #define IDC_TOGGLEFULLSCREEN        1
@@ -169,6 +178,9 @@ void RenderText();
 //--------------------------------------------------------------------------------------
 // Helper function to compile an hlsl shader from file, 
 // its binary compiled code is returned
+#ifndef MY
+#else
+#endif
 HRESULT CompileShaderFromFile(WCHAR* szFileName, LPCSTR szEntryPoint, LPCSTR szShaderModel, ID3DBlob** ppBlobOut){
 	HRESULT hr = S_OK;
 
@@ -603,11 +615,11 @@ HRESULT CreateParticlePosBufferMy(ID3D11Device* pd3dDevice){
 	//  Attach AMP array of positions to D3D buffer.
 	hr = concurrency::direct3d::get_buffer(
 		g_deviceDataMy[0]->DataOld->pos)->QueryInterface(__uuidof(ID3D11Buffer),
-													   reinterpret_cast<LPVOID*>(&g_pParticlePosOldMy));
+														 reinterpret_cast<LPVOID*>(&g_pParticlePosOldMy));
 	V_RETURN(hr);
 	hr = concurrency::direct3d::get_buffer(
 		g_deviceDataMy[0]->DataNew->pos)->QueryInterface(__uuidof(ID3D11Buffer),
-													   reinterpret_cast<LPVOID*>(&g_pParticlePosNewMy));
+														 reinterpret_cast<LPVOID*>(&g_pParticlePosNewMy));
 	V_RETURN(hr)
 		D3D11_SHADER_RESOURCE_VIEW_DESC resourceDesc;
 	ZeroMemory(&resourceDesc, sizeof(resourceDesc));
@@ -690,7 +702,8 @@ void CALLBACK OnFrameMoveMy(double fTime, float fElapsedTime, void* pUserContext
 	// Update the camera's position based on user input 
 	g_camera.FrameMove(fElapsedTime);
 }//--------------------------------------------------------------------------------------
-// Before handling window messages, DXUT passes incoming windows 
+#ifndef MY
+ // Before handling window messages, DXUT passes incoming windows 
 // messages to the application through this callback function. If the application sets 
 // *pbNoFurtherProcessing to TRUE, then DXUT will not process this message.
 LRESULT CALLBACK MsgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, bool* pbNoFurtherProcessing,
@@ -699,13 +712,11 @@ LRESULT CALLBACK MsgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, boo
 	*pbNoFurtherProcessing = g_dialogResourceManager.MsgProc(hWnd, uMsg, wParam, lParam);
 	if(*pbNoFurtherProcessing)
 		return 0;
-
 	// Pass messages to settings dialog if its active
 	if(g_d3dSettingsDlg.IsActive()){
 		g_d3dSettingsDlg.MsgProc(hWnd, uMsg, wParam, lParam);
 		return 0;
 	}
-
 	// Give the dialogs a chance to handle the message first
 	*pbNoFurtherProcessing = g_HUD.MsgProc(hWnd, uMsg, wParam, lParam);
 	if(*pbNoFurtherProcessing)
@@ -713,15 +724,37 @@ LRESULT CALLBACK MsgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, boo
 	*pbNoFurtherProcessing = g_sampleUI.MsgProc(hWnd, uMsg, wParam, lParam);
 	if(*pbNoFurtherProcessing)
 		return 0;
-
 	// Pass all windows messages to camera so it can respond to user input
 	g_camera.HandleMessages(hWnd, uMsg, wParam, lParam);
-
 	return 0;
 }//--------------------------------------------------------------------------------------
+LRESULT CALLBACK MsgProcMy(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, bool* pbNoFurtherProcessing,
+						 void* pUserContext){
+	// Pass messages to dialog resource manager calls so GUI state is updated correctly
+	*pbNoFurtherProcessing = g_dialogResourceManagerMy.MsgProc(hWnd, uMsg, wParam, lParam);
+	if(*pbNoFurtherProcessing)
+		return 0;
+	// Pass messages to settings dialog if its active
+	if(g_d3dSettingsDlgMy.IsActive()){
+		g_d3dSettingsDlgMy.MsgProc(hWnd, uMsg, wParam, lParam);
+		return 0;
+	}
+	// Give the dialogs a chance to handle the message first
+	*pbNoFurtherProcessing = g_HUDMy.MsgProc(hWnd, uMsg, wParam, lParam);
+	if(*pbNoFurtherProcessing)
+		return 0;
+	*pbNoFurtherProcessing = g_sampleUIMy.MsgProc(hWnd, uMsg, wParam, lParam);
+	if(*pbNoFurtherProcessing)
+		return 0;
+	// Pass all windows messages to camera so it can respond to user input
+	g_cameraMy.HandleMessages(hWnd, uMsg, wParam, lParam);
+	return 0;
+}//--------------------------------------------------------------------------------------
+#else // !MY
+#endif // !MY
+#ifndef MY
 // Handles the GUI events
 void SetBodyText();
-
 void CALLBACK OnGUIEvent(UINT nEvent, int nControlID, CDXUTControl* pControl, void* pUserContext){
 	switch(nControlID){
 	case IDC_TOGGLEFULLSCREEN:
@@ -758,24 +791,74 @@ void CALLBACK OnGUIEvent(UINT nEvent, int nControlID, CDXUTControl* pControl, vo
 	break;
 	}
 } // ///////////////////////////////////////////////////////////////////////////////////////////////////////
-// For the multi-accelerator integrator there must be at least one tile of particles per GPU.
-void CorrectNumberOfParticles(){
+void SetBodyTextMy();
+void CALLBACK OnGUIEventMy(UINT nEvent, int nControlID, CDXUTControl* pControl, void* pUserContext){
+	switch(nControlID){
+	case IDC_TOGGLEFULLSCREEN:
+		DXUTToggleFullScreen();
+		break;
+	case IDC_CHANGEDEVICE:
+		g_d3dSettingsDlgMy.SetActive(!g_d3dSettingsDlgMy.IsActive());
+		break;
+	case IDC_RESETPARTICLES:
+		LoadParticlesMy();
+		break;
+	case IDC_COMPUTETYPECOMBO:
+	{
+		CDXUTComboBox* pComboBox = static_cast<CDXUTComboBox*>(pControl);
+		g_eComputeTypeMy = static_cast<ComputeTypeMy>(pComboBox->GetSelectedIndex());
+
+		g_particleColorMy = g_particleColorsMy[g_eComputeTypeMy];
+		g_pNBodyMy = NBodyFactoryMy(g_eComputeTypeMy);
+
+		//CorrectNumberOfParticles();
+		SetBodyTextMy();
+		g_FpsStatisticsMy.clear();
+	}
+	break;
+	case IDC_NBODIES_SLIDER:
+	{
+		CDXUTSlider* pSlider = static_cast<CDXUTSlider*>(pControl);
+		g_numParticlesMy = pSlider->GetValue() * g_particleNumStepSizeMy;
+
+		//CorrectNumberOfParticles();
+		SetBodyTextMy();
+		g_FpsStatisticsMy.clear();
+	}
+	break;
+	}
+} // ///////////////////////////////////////////////////////////////////////////////////////////////////////
+#else // !MY
+#endif // !MY
+#ifndef MY
+  // For the multi-accelerator integrator there must be at least one tile of particles per GPU.
+void CorrectNumberOfParticles(){ // not use in My
 	const int minParticles = static_cast<int>(g_deviceData.size() * g_pNBody->TileSize());
 	if((g_eComputeType >= kMultiTile) && (g_numParticles < minParticles)){
 		g_numParticles = minParticles;
 		g_HUD.GetSlider(IDC_NBODIES_SLIDER)->SetValue(g_numParticles / g_particleNumStepSize);
 	}
 } // ///////////////////////////////////////////////////////////////////////////////////////////////
+#endif // !MY
+#ifndef MY
 void SetBodyText(){
 	WCHAR szTemp[256];
 	swprintf_s(szTemp, L"Bodies: %d", g_numParticles);
 	g_HUD.GetStatic(IDC_NBODIES_LABEL)->SetText(szTemp);
 } // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void SetBodyTextMy(){
+	WCHAR szTemp[256];
+	swprintf_s(szTemp, L"Bodies: %d", g_numParticlesMy);
+	g_HUDMy.GetStatic(IDC_NBODIES_LABEL)->SetText(szTemp);
+} // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#else
+#endif
 bool CALLBACK IsD3D11DeviceAcceptable(const CD3D11EnumAdapterInfo* AdapterInfo, UINT Output, const CD3D11EnumDeviceInfo* DeviceInfo,
 									  DXGI_FORMAT BackBufferFormat, bool bWindowed, void* pUserContext){
 	// reject any device which doesn't support CS4x
 	return (DeviceInfo->ComputeShaders_Plus_RawAndStructuredBuffers_Via_Shader_4_x != false);
 }//--------------------------------------------------------------------------------------
+#ifndef MY
 // This callback function will be called immediately after the Direct3D device has been 
 // created, which will happen during application initialization and windowed/full screen 
 // toggles. This is the best location to Create D3DPOOL_MANAGED resources since these 
@@ -804,9 +887,12 @@ HRESULT CALLBACK OnD3D11CreateDevice(ID3D11Device* pd3dDevice, const DXGI_SURFAC
 	g_pRenderParticlesVS = nullptr;
 	g_pRenderParticlesGS = nullptr;
 	g_pRenderParticlesPS = nullptr;
-	V_RETURN(pd3dDevice->CreateVertexShader(pBlobRenderParticlesVS->GetBufferPointer(), pBlobRenderParticlesVS->GetBufferSize(), nullptr, &g_pRenderParticlesVS));
-	V_RETURN(pd3dDevice->CreateGeometryShader(pBlobRenderParticlesGS->GetBufferPointer(), pBlobRenderParticlesGS->GetBufferSize(), nullptr, &g_pRenderParticlesGS));
-	V_RETURN(pd3dDevice->CreatePixelShader(pBlobRenderParticlesPS->GetBufferPointer(), pBlobRenderParticlesPS->GetBufferSize(), nullptr, &g_pRenderParticlesPS));
+	V_RETURN(pd3dDevice->CreateVertexShader(pBlobRenderParticlesVS->GetBufferPointer(), pBlobRenderParticlesVS->GetBufferSize(),
+											nullptr, &g_pRenderParticlesVS));
+	V_RETURN(pd3dDevice->CreateGeometryShader(pBlobRenderParticlesGS->GetBufferPointer(), pBlobRenderParticlesGS->GetBufferSize(),
+											  nullptr, &g_pRenderParticlesGS));
+	V_RETURN(pd3dDevice->CreatePixelShader(pBlobRenderParticlesPS->GetBufferPointer(), pBlobRenderParticlesPS->GetBufferSize(),
+										   nullptr, &g_pRenderParticlesPS));
 
 	// Create our vertex input layout
 	const D3D11_INPUT_ELEMENT_DESC layout[] =
@@ -815,7 +901,9 @@ HRESULT CALLBACK OnD3D11CreateDevice(ID3D11Device* pd3dDevice, const DXGI_SURFAC
 	};
 	g_pParticleVertexLayout = nullptr;
 	V_RETURN(pd3dDevice->CreateInputLayout(layout, sizeof(layout) / sizeof(layout[0]),
-										   pBlobRenderParticlesVS->GetBufferPointer(), pBlobRenderParticlesVS->GetBufferSize(), &g_pParticleVertexLayout));
+										   pBlobRenderParticlesVS->GetBufferPointer(),
+										   pBlobRenderParticlesVS->GetBufferSize(),
+										   &g_pParticleVertexLayout));
 	// Create NBody object
 	g_pNBody = NBodyFactory(g_eComputeType);
 	V_RETURN(CreateParticleBuffer(pd3dDevice));
@@ -872,51 +960,48 @@ HRESULT CALLBACK OnD3D11CreateDevice(ID3D11Device* pd3dDevice, const DXGI_SURFAC
 	g_camera.SetViewParams(&vecEye, &vecAt);
 	return S_OK;
 } // ////////////////////////////////////////////////////////////////////////////////////////////////////
-// This callback function will be called immediately after the Direct3D device has been 
-// created, which will happen during application initialization and windowed/full screen 
-// toggles. This is the best location to Create D3DPOOL_MANAGED resources since these 
-// resources need to be reloaded whenever the device is destroyed. Resources created  
-// here should be released in the OnD3D11DestroyDevice callback. 
 HRESULT CALLBACK OnD3D11CreateDeviceMy(ID3D11Device* pd3dDevice, const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc,
-									 void* pUserContext){
+									   void* pUserContext){
 	HRESULT hr = S_OK;
-
 	D3D11_FEATURE_DATA_D3D10_X_HARDWARE_OPTIONS ho;
 	V_RETURN(pd3dDevice->CheckFeatureSupport(D3D11_FEATURE_D3D10_X_HARDWARE_OPTIONS, &ho, sizeof(ho)));
 
 	CComPtr<ID3D11DeviceContext> pd3dImmediateContext = DXUTGetD3D11DeviceContext();
-	V_RETURN(g_dialogResourceManager.OnD3D11CreateDevice(pd3dDevice, pd3dImmediateContext));
-	V_RETURN(g_d3dSettingsDlg.OnD3D11CreateDevice(pd3dDevice));
-	g_pTxtHelper = std::unique_ptr<CDXUTTextHelper>(new CDXUTTextHelper(pd3dDevice, pd3dImmediateContext, &g_dialogResourceManager, 15));
+	V_RETURN(g_dialogResourceManagerMy.OnD3D11CreateDevice(pd3dDevice, pd3dImmediateContext));
+	V_RETURN(g_d3dSettingsDlgMy.OnD3D11CreateDevice(pd3dDevice));
+	g_pTxtHelper = std::unique_ptr<CDXUTTextHelper>(new CDXUTTextHelper(pd3dDevice, pd3dImmediateContext, &g_dialogResourceManagerMy, 15));
 
 	CComPtr<ID3DBlob> pBlobRenderParticlesVS;
 	CComPtr<ID3DBlob> pBlobRenderParticlesGS;
 	CComPtr<ID3DBlob> pBlobRenderParticlesPS;
 
-	// Create the shaders
+	// Create the shaders ( CompileShaderFromFileMy not need)
 	V_RETURN(CompileShaderFromFile(L"ParticleDrawGpu.hlsl", "VSParticleDraw", "vs_4_0", &pBlobRenderParticlesVS));
 	V_RETURN(CompileShaderFromFile(L"ParticleDrawGpu.hlsl", "GSParticleDraw", "gs_4_0", &pBlobRenderParticlesGS));
 	V_RETURN(CompileShaderFromFile(L"ParticleDrawGpu.hlsl", "PSParticleDraw", "ps_4_0", &pBlobRenderParticlesPS));
-	g_pRenderParticlesVS = nullptr;
-	g_pRenderParticlesGS = nullptr;
-	g_pRenderParticlesPS = nullptr;
-	V_RETURN(pd3dDevice->CreateVertexShader(pBlobRenderParticlesVS->GetBufferPointer(), pBlobRenderParticlesVS->GetBufferSize(), nullptr, &g_pRenderParticlesVS));
-	V_RETURN(pd3dDevice->CreateGeometryShader(pBlobRenderParticlesGS->GetBufferPointer(), pBlobRenderParticlesGS->GetBufferSize(), nullptr, &g_pRenderParticlesGS));
-	V_RETURN(pd3dDevice->CreatePixelShader(pBlobRenderParticlesPS->GetBufferPointer(), pBlobRenderParticlesPS->GetBufferSize(), nullptr, &g_pRenderParticlesPS));
+	g_pRenderParticlesVSMy = nullptr;
+	g_pRenderParticlesGSMy = nullptr;
+	g_pRenderParticlesPSMy = nullptr;
+	V_RETURN(pd3dDevice->CreateVertexShader(pBlobRenderParticlesVS->GetBufferPointer(), pBlobRenderParticlesVS->GetBufferSize(),
+											nullptr, &g_pRenderParticlesVSMy));
+	V_RETURN(pd3dDevice->CreateGeometryShader(pBlobRenderParticlesGS->GetBufferPointer(), pBlobRenderParticlesGS->GetBufferSize(),
+											  nullptr, &g_pRenderParticlesGSMy));
+	V_RETURN(pd3dDevice->CreatePixelShader(pBlobRenderParticlesPS->GetBufferPointer(), pBlobRenderParticlesPS->GetBufferSize(),
+										   nullptr, &g_pRenderParticlesPSMy));
 
 	// Create our vertex input layout
 	const D3D11_INPUT_ELEMENT_DESC layout[] =
 	{
 		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 	};
-	g_pParticleVertexLayout = nullptr;
+	g_pParticleVertexLayoutMy = nullptr;
 	V_RETURN(pd3dDevice->CreateInputLayout(layout, sizeof(layout) / sizeof(layout[0]),
-										   pBlobRenderParticlesVS->GetBufferPointer(), pBlobRenderParticlesVS->GetBufferSize(), &g_pParticleVertexLayout));
+										   pBlobRenderParticlesVS->GetBufferPointer(),
+										   pBlobRenderParticlesVS->GetBufferSize(),
+										   &g_pParticleVertexLayoutMy));
 	// Create NBody object
-	g_pNBody = NBodyFactory(g_eComputeType);
 	g_pNBodyMy = NBodyFactoryMy(g_eComputeTypeMy);
-	V_RETURN(CreateParticleBuffer(pd3dDevice));
-	V_RETURN(CreateParticlePosBuffer(pd3dDevice));
+	V_RETURN(CreateParticleBufferMy(pd3dDevice));
 	V_RETURN(CreateParticlePosBufferMy(pd3dDevice));
 
 	// Setup constant buffer
@@ -926,14 +1011,14 @@ HRESULT CALLBACK OnD3D11CreateDeviceMy(ID3D11Device* pd3dDevice, const DXGI_SURF
 	bufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	bufferDesc.MiscFlags = 0;
 	bufferDesc.ByteWidth = sizeof(ResourceData);
-	g_pConstantBuffer = nullptr;
-	V_RETURN(pd3dDevice->CreateBuffer(&bufferDesc, nullptr, &g_pConstantBuffer));
+	g_pConstantBufferMy = nullptr;
+	V_RETURN(pd3dDevice->CreateBuffer(&bufferDesc, nullptr, &g_pConstantBufferMy));
 
 	// Load the Particle Texture
 	WCHAR str[MAX_PATH] = {};
 	V_RETURN(DXUTFindDXSDKMediaFileCch(str, MAX_PATH, L"UI\\Particle.dds"));
-	g_pShaderResView = nullptr;
-	V_RETURN(D3DX11CreateShaderResourceViewFromFile(pd3dDevice, str, nullptr, nullptr, &g_pShaderResView, nullptr));
+	g_pShaderResViewMy = nullptr;
+	V_RETURN(D3DX11CreateShaderResourceViewFromFile(pd3dDevice, str, nullptr, nullptr, &g_pShaderResViewMy, nullptr));
 
 	D3D11_SAMPLER_DESC samplerDesc;
 	ZeroMemory(&samplerDesc, sizeof(samplerDesc));
@@ -941,8 +1026,8 @@ HRESULT CALLBACK OnD3D11CreateDeviceMy(ID3D11Device* pd3dDevice, const DXGI_SURF
 	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
 	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
 	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-	g_pSampleStateLinear = nullptr;
-	V_RETURN(pd3dDevice->CreateSamplerState(&samplerDesc, &g_pSampleStateLinear));
+	g_pSampleStateLinearMy = nullptr;
+	V_RETURN(pd3dDevice->CreateSamplerState(&samplerDesc, &g_pSampleStateLinearMy));
 
 	D3D11_BLEND_DESC blendStateDesc;
 	ZeroMemory(&blendStateDesc, sizeof(blendStateDesc));
@@ -954,22 +1039,24 @@ HRESULT CALLBACK OnD3D11CreateDeviceMy(ID3D11Device* pd3dDevice, const DXGI_SURF
 	blendStateDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ZERO;
 	blendStateDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
 	blendStateDesc.RenderTarget[0].RenderTargetWriteMask = 0x0F;
-	g_pBlendingStateParticle = nullptr;
-	V_RETURN(pd3dDevice->CreateBlendState(&blendStateDesc, &g_pBlendingStateParticle));
+	g_pBlendingStateParticleMy = nullptr;
+	V_RETURN(pd3dDevice->CreateBlendState(&blendStateDesc, &g_pBlendingStateParticleMy));
 
 	D3D11_DEPTH_STENCIL_DESC depthStencilDesc;
 	ZeroMemory(&depthStencilDesc, sizeof(depthStencilDesc));
 	depthStencilDesc.DepthEnable = false;
 	depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
-	g_pDepthStencilState = nullptr;
-	pd3dDevice->CreateDepthStencilState(&depthStencilDesc, &g_pDepthStencilState);
+	g_pDepthStencilStateMy = nullptr;
+	pd3dDevice->CreateDepthStencilState(&depthStencilDesc, &g_pDepthStencilStateMy);
 
 	// Setup the camera's view parameters
-	D3DXVECTOR3 vecEye(-g_Spread * 2, g_Spread * 4, -g_Spread * 3);
+	D3DXVECTOR3 vecEye(-g_SpreadMy * 2, g_SpreadMy * 4, -g_SpreadMy * 3);
 	D3DXVECTOR3 vecAt(0.0f, 0.0f, 0.0f);
-	g_camera.SetViewParams(&vecEye, &vecAt);
+	g_cameraMy.SetViewParams(&vecEye, &vecAt);
 	return S_OK;
 } // ////////////////////////////////////////////////////////////////////////////////////////////////////
+#else
+#endif
 #ifndef MY
 HRESULT CALLBACK OnD3D11ResizedSwapChain(ID3D11Device* pd3dDevice, IDXGISwapChain* pSwapChain,
 										 const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc, void* pUserContext){
@@ -992,7 +1079,7 @@ HRESULT CALLBACK OnD3D11ResizedSwapChain(ID3D11Device* pd3dDevice, IDXGISwapChai
 	return hr;
 } // //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 HRESULT CALLBACK OnD3D11ResizedSwapChainMy(ID3D11Device* pd3dDevice, IDXGISwapChain* pSwapChain,
-										 const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc, void* pUserContext){
+										   const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc, void* pUserContext){
 	HRESULT hr = S_OK;
 
 	V_RETURN(g_dialogResourceManagerMy.OnD3D11ResizedSwapChain(pd3dDevice, pBackBufferSurfaceDesc));
@@ -1021,8 +1108,8 @@ void CALLBACK OnD3D11ReleasingSwapChainMy(void* pUserContext){
 }//--------------------------------------------------------------------------------------
 #else
 #endif
-//  Create particle buffers for use during rendering.
 #ifndef MY
+//  Create particle buffers for use during rendering.
 void RenderText(){
 	g_pTxtHelper->Begin();
 	g_pTxtHelper->SetInsertionPos(2, 0);
@@ -1196,7 +1283,7 @@ void CALLBACK OnD3D11FrameRender(ID3D11Device* pd3dDevice, ID3D11DeviceContext* 
 	RenderText();
 }//--------------------------------------------------------------------------------------
 void CALLBACK OnD3D11FrameRenderMy(ID3D11Device* pd3dDevice, ID3D11DeviceContext* pd3dImmediateContext, double fTime,
-								 float fElapsedTime, void* pUserContext){
+								   float fElapsedTime, void* pUserContext){
 	// If the settings dialog is being shown, then render it instead of rendering the app's scene
 	if(g_d3dSettingsDlgMy.IsActive()){
 		g_d3dSettingsDlgMy.OnRender(fElapsedTime);
