@@ -388,15 +388,11 @@ bool CALLBACK ModifyDeviceSettings(DXUTDeviceSettings* pDeviceSettings, void* pU
 	}
 
 	return true;
-}
-
-//--------------------------------------------------------------------------------------
+}//--------------------------------------------------------------------------------------
 // This callback function will be called once at the beginning of every frame. This is the
 // best location for your application to handle updates to the scene, but is not 
 // intended to contain actual rendering calls, which should instead be placed in the 
 // OnFrameRender callback.  
-//--------------------------------------------------------------------------------------
-
 void CALLBACK OnFrameMove(double fTime, float fElapsedTime, void* pUserContext){
 	g_pNBody->Integrate(g_pParticlesOld, g_pParticlesNew, g_numParticles);
 
@@ -406,14 +402,10 @@ void CALLBACK OnFrameMove(double fTime, float fElapsedTime, void* pUserContext){
 
 	// Update the camera's position based on user input 
 	g_camera.FrameMove(fElapsedTime);
-}
-
-//--------------------------------------------------------------------------------------
+}//--------------------------------------------------------------------------------------
 // Before handling window messages, DXUT passes incoming windows 
 // messages to the application through this callback function. If the application sets 
 // *pbNoFurtherProcessing to TRUE, then DXUT will not process this message.
-//--------------------------------------------------------------------------------------
-
 LRESULT CALLBACK MsgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, bool* pbNoFurtherProcessing,
 						 void* pUserContext){
 	// Pass messages to dialog resource manager calls so GUI state is updated correctly
@@ -426,7 +418,6 @@ LRESULT CALLBACK MsgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, boo
 		g_d3dSettingsDlg.MsgProc(hWnd, uMsg, wParam, lParam);
 		return 0;
 	}
-
 	// Give the dialogs a chance to handle the message first
 	*pbNoFurtherProcessing = g_HUD.MsgProc(hWnd, uMsg, wParam, lParam);
 	if(*pbNoFurtherProcessing)
@@ -437,14 +428,9 @@ LRESULT CALLBACK MsgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, boo
 
 	// Pass all windows messages to camera so it can respond to user input
 	g_camera.HandleMessages(hWnd, uMsg, wParam, lParam);
-
 	return 0;
-}
-
-//--------------------------------------------------------------------------------------
+}//--------------------------------------------------------------------------------------
 // Handles the GUI events
-//--------------------------------------------------------------------------------------
-
 void CALLBACK OnGUIEvent(UINT nEvent, int nControlID, CDXUTControl* pControl, void* pUserContext){
 	switch(nControlID){
 	case IDC_TOGGLEFULLSCREEN:
@@ -482,22 +468,17 @@ void CALLBACK OnGUIEvent(UINT nEvent, int nControlID, CDXUTControl* pControl, vo
 	}
 	break;
 	}
-}
-
+} // /////////////////////////////////////////////////////////////////////////////////////////////////
 bool CALLBACK IsD3D11DeviceAcceptable(const CD3D11EnumAdapterInfo* AdapterInfo, UINT Output, const CD3D11EnumDeviceInfo* DeviceInfo,
 									  DXGI_FORMAT BackBufferFormat, bool bWindowed, void* pUserContext){
 	// reject any device which doesn't support CS4x
 	return (DeviceInfo->ComputeShaders_Plus_RawAndStructuredBuffers_Via_Shader_4_x != false);
-}
-
-//--------------------------------------------------------------------------------------
+}//--------------------------------------------------------------------------------------
 // This callback function will be called immediately after the Direct3D device has been 
 // created, which will happen during application initialization and windowed/full screen 
 // toggles. This is the best location to Create D3DPOOL_MANAGED resources since these 
 // resources need to be reloaded whenever the device is destroyed. Resources created  
 // here should be released in the OnD3D11DestroyDevice callback. 
-//--------------------------------------------------------------------------------------
-
 HRESULT CALLBACK OnD3D11CreateDevice(ID3D11Device* pd3dDevice, const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc,
 									 void* pUserContext){
 	HRESULT hr = S_OK;
@@ -589,10 +570,8 @@ HRESULT CALLBACK OnD3D11CreateDevice(ID3D11Device* pd3dDevice, const DXGI_SURFAC
 	D3DXVECTOR3 vecEye(-g_Spread * 2, g_Spread * 4, -g_Spread * 3);
 	D3DXVECTOR3 vecAt(0.0f, 0.0f, 0.0f);
 	g_camera.SetViewParams(&vecEye, &vecAt);
-
 	return S_OK;
-}
-
+} // ///////////////////////////////////////////////////////////////////////////////////////////////////////
 HRESULT CALLBACK OnD3D11ResizedSwapChain(ID3D11Device* pd3dDevice, IDXGISwapChain* pSwapChain,
 										 const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc, void* pUserContext){
 	HRESULT hr = S_OK;
@@ -610,18 +589,12 @@ HRESULT CALLBACK OnD3D11ResizedSwapChain(ID3D11Device* pd3dDevice, IDXGISwapChai
 	g_HUD.SetSize(170, 170);
 	g_sampleUI.SetLocation(pBackBufferSurfaceDesc->Width - 170, pBackBufferSurfaceDesc->Height - 300);
 	g_sampleUI.SetSize(170, 300);
-
 	return hr;
-}
-
+} // ///////////////////////////////////////////////////////////////////////////////////////////
 void CALLBACK OnD3D11ReleasingSwapChain(void* pUserContext){
 	g_dialogResourceManager.OnD3D11ReleasingSwapChain();
-}
-
-//--------------------------------------------------------------------------------------
+}//--------------------------------------------------------------------------------------
 //  Actual rendering routines.
-//--------------------------------------------------------------------------------------
-
 void RenderText(){
 	g_pTxtHelper->Begin();
 	g_pTxtHelper->SetInsertionPos(2, 0);
@@ -643,8 +616,7 @@ void RenderText(){
 	g_pTxtHelper->DrawFormattedTextLine(L"GFlops: %.2f ", gflops);
 
 	g_pTxtHelper->End();
-}
-
+} // ////////////////////////////////////////////////////////////////////////////////////////////////////
 bool RenderParticles(ID3D11DeviceContext* pd3dImmediateContext, D3DXMATRIX& view, D3DXMATRIX& projection){
 	// copy in particle position and velocity values
 	UINT size = static_cast<UINT>(g_numParticles * sizeof(ParticleCpu));
@@ -699,10 +671,8 @@ bool RenderParticles(ID3D11DeviceContext* pd3dImmediateContext, D3DXMATRIX& view
 	pd3dImmediateContext->GSSetShader(nullptr, nullptr, 0);
 	pd3dImmediateContext->OMSetBlendState(pBlendState0, &BlendFactor0.r, SampleMask0);
 	pd3dImmediateContext->OMSetDepthStencilState(pDepthStencilState0, StencilRef0);
-
 	return true;
-}
-
+} // ///////////////////////////////////////////////////////////////////////////////////////////////////
 void CALLBACK OnD3D11FrameRender(ID3D11Device* pd3dDevice, ID3D11DeviceContext* pd3dImmediateContext, double fTime,
 								 float fElapsedTime, void* pUserContext){
 	// If the settings dialog is being shown, then render it instead of rendering the app's scene
@@ -710,7 +680,6 @@ void CALLBACK OnD3D11FrameRender(ID3D11Device* pd3dDevice, ID3D11DeviceContext* 
 		g_d3dSettingsDlg.OnRender(fElapsedTime);
 		return;
 	}
-
 	const float clearColor[4] = {0.0, 0.0, 0.0, 0.0};
 	ID3D11RenderTargetView* pRTV = DXUTGetD3D11RenderTargetView();
 	pd3dImmediateContext->ClearRenderTargetView(pRTV, clearColor);
@@ -730,17 +699,13 @@ void CALLBACK OnD3D11FrameRender(ID3D11Device* pd3dDevice, ID3D11DeviceContext* 
 	g_HUD.OnRender(fElapsedTime);
 	g_sampleUI.OnRender(fElapsedTime);
 	RenderText();
-}
-
-//--------------------------------------------------------------------------------------
+}//--------------------------------------------------------------------------------------
 // This callback function will be called immediately after the Direct3D device has 
 // been destroyed, which generally happens as a result of application termination or 
 // windowed/full screen toggles. Resources created in the OnD3D11CreateDevice callback 
 // should be released here, which generally includes all D3DPOOL_MANAGED resources. 
-//--------------------------------------------------------------------------------------
-
 void CALLBACK OnD3D11DestroyDevice(void* pUserContext){
 	g_dialogResourceManager.OnD3D11DestroyDevice();
 	g_d3dSettingsDlg.OnD3D11DestroyDevice();
 	DXUTGetGlobalResourceCache().OnDestroyDevice();
-}
+} // /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
