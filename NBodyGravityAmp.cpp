@@ -157,12 +157,11 @@ int_3                               g_SizesMy = int_3(1024 + 1, 512 + 1, 256 + 1
 ComputeTypeMy                       g_eComputeTypeMy = ComputeTypeMy::D3;         // Default integrator compute type
 std::shared_ptr<INBodyAmpMy>        g_pNBodyMy;                             // The current integrator
 
-																			//  Particle data structures.
+//  Particle data structures.
 std::vector<std::shared_ptr<TaskDataMy>> g_deviceDataMy;
 //  Particle colours.
-D3DXCOLOR                           g_particleColorMy;
-
-std::vector<D3DCOLOR>               g_particleColorsMy;
+D3DXCOLOR g_particleColorMy;
+std::vector<D3DCOLOR> g_particleColorsMy;
 #endif // !M
 // Forward declarations 
 #ifndef MY
@@ -195,8 +194,6 @@ void CALLBACK OnGUIEventMy(UINT nEvent, int nControlID, CDXUTControl* pControl, 
 inline void SetBodyTextMy();
 bool CALLBACK IsD3D11DeviceAcceptable(const CD3D11EnumAdapterInfo* AdapterInfo, UINT Output, const CD3D11EnumDeviceInfo* DeviceInfo,
 									  DXGI_FORMAT BackBufferFormat, bool bWindowed, void* pUserContext);
-//bool CALLBACK IsD3D11DeviceAcceptableMy(const CD3D11EnumAdapterInfo* AdapterInfo, UINT Output, const CD3D11EnumDeviceInfo* DeviceInfo,
-//									  DXGI_FORMAT BackBufferFormat, bool bWindowed, void* pUserContext);
 HRESULT CALLBACK OnD3D11CreateDeviceMy(ID3D11Device* pd3dDevice, const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc,
 									 void* pUserContext);
 HRESULT CALLBACK OnD3D11ResizedSwapChainMy(ID3D11Device* pd3dDevice, IDXGISwapChain* pSwapChain,
@@ -548,8 +545,8 @@ void LoadParticlesMy(int_3 sizes){
 		array_view<float_3, 1> intendView = pold->intend.section(index<1>(begin), extent<1>(end));
 		copy(particles.intend.begin(), intendView);
 
-		array_view<int, 3> areaView = pold->area.section(index<3>(beginArea), extent<3>(endArea));
-		copy(particles.area.data(), areaView);
+		//! array_view<int, 3> areaView = pold->area.section(index<3>(beginArea), extent<3>(endArea));
+		//! copy(particles.area.data(), areaView);
 	} // for(size_t i = 0; i < g_deviceDataMy.size(); ++i)
 } // ///////////////////////////////////////////////////////////////////////////////////////
 #endif // !MY
