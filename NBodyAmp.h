@@ -30,7 +30,6 @@
 #include "Common.h"
 #include "INBodyAmp.h"
 #include "AmpUtilities.h"
-
 using namespace concurrency;
 using namespace concurrency::graphics;
 
@@ -83,6 +82,10 @@ private:
 	array<float_3, 1> m_velOld;
 	array<float_3, 1> m_velNew;
 public:
+	// Constructor TaskData call from NBodyGravityAmp.cpp CreateParticlePosBuffer():
+	// accelerator_view renderView = 
+	//   concurrency::direct3d::create_accelerator_view(reinterpret_cast<IUnknown*>(pd3dDevice));
+	// g_deviceData = CreateTasks(g_maxParticles, renderView);
 	TaskData(int size, accelerator_view view, accelerator acc) :
 		Accelerator(acc),
 		m_posOld(size, view),

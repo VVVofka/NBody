@@ -317,10 +317,13 @@ HRESULT CreateParticleBuffer(ID3D11Device* pd3dDevice){
 //--------------------------------------------------------------------------------------
 //  Load particles. Two clusters set to collide.
 //--------------------------------------------------------------------------------------
+ParticlesCpu particles(g_maxParticles);
+array_view<float_3, 1> posView(g_maxParticles);
+array_view<float_3, 1> velView(g_maxParticles);
 void LoadParticles(){
 	const float centerSpread = g_Spread * 0.50f;
 	// Create particles in CPU memory.
-	ParticlesCpu particles(g_maxParticles);
+	//ParticlesCpu particles(g_maxParticles);
 	for(int i = 0; i < g_maxParticles; i += g_particleNumStepSize){
 		LoadClusterParticles(particles, i, (g_particleNumStepSize / 2),
 							 float_3(centerSpread, 0.0f, 0.0f),
@@ -335,9 +338,11 @@ void LoadParticles(){
 	index<1> begin(0);
 	extent<1> end(g_maxParticles);
 	for(size_t i = 0; i < g_deviceData.size(); ++i){
-		array_view<float_3, 1> posView = g_deviceData[i]->DataOld->pos.section(index<1>(begin), extent<1>(end));
+		//array_view<float_3, 1> posView = g_deviceData[i]->DataOld->pos.section(index<1>(begin), extent<1>(end));
+		posView = g_deviceData[i]->DataOld->pos.section(index<1>(begin), extent<1>(end));
 		copy(particles.pos.begin(), posView);
-		array_view<float_3, 1> velView = g_deviceData[i]->DataOld->vel.section(index<1>(begin), extent<1>(end));
+		//array_view<float_3, 1> velView = g_deviceData[i]->DataOld->vel.section(index<1>(begin), extent<1>(end));
+		velView = g_deviceData[i]->DataOld->vel.section(index<1>(begin), extent<1>(end));
 		copy(particles.vel.begin(), velView);
 	}
 }//--------------------------------------------------------------------------------------
@@ -381,7 +386,6 @@ std::shared_ptr<INBodyAmp> NBodyFactory(ComputeType type){
 }//--------------------------------------------------------------------------------------
 //  Create buffers and hook them up to DirectX.
 //--------------------------------------------------------------------------------------
-
 HRESULT CreateParticlePosBuffer(ID3D11Device* pd3dDevice){
 	HRESULT hr = S_OK;
 	accelerator_view renderView =
@@ -428,14 +432,10 @@ HRESULT CreateParticlePosBuffer(ID3D11Device* pd3dDevice){
 	V_RETURN(hr);
 	hr = pd3dDevice->CreateUnorderedAccessView(g_pParticlePosNew, &viewDesc, &g_pParticlePosUavNew);
 	V_RETURN(hr);
-
 	return hr;
-}
-
-//--------------------------------------------------------------------------------------
+}//--------------------------------------------------------------------------------------
 //  Create render buffer. 
 //--------------------------------------------------------------------------------------
-
 bool CALLBACK ModifyDeviceSettings(DXUTDeviceSettings* pDeviceSettings, void* pUserContext){
 	assert(pDeviceSettings->ver == DXUT_D3D11_DEVICE);
 
@@ -453,17 +453,13 @@ bool CALLBACK ModifyDeviceSettings(DXUTDeviceSettings* pDeviceSettings, void* pU
 			DXUTDisplaySwitchingToREFWarning(pDeviceSettings->ver);
 		}
 	}
-
 	return true;
-}
-
-//--------------------------------------------------------------------------------------
+}//--------------------------------------------------------------------------------------
 // This callback function will be called once at the beginning of every frame. This is the
 // best location for your application to handle updates to the scene, but is not 
 // intended to contain actual rendering calls, which should instead be placed in the 
 // OnFrameRender callback.  
 //--------------------------------------------------------------------------------------
-
 void CALLBACK OnFrameMove(double fTime, float fElapsedTime, void* pUserContext){
 	g_pNBody->Integrate(g_deviceData, g_numParticles);
 	std::for_each(g_deviceData.begin(), g_deviceData.end(), [](std::shared_ptr<TaskData>& t){
@@ -475,21 +471,19 @@ void CALLBACK OnFrameMove(double fTime, float fElapsedTime, void* pUserContext){
 
 	// Update the camera's position based on user input 
 	g_camera.FrameMove(fElapsedTime);
-}
-
-//--------------------------------------------------------------------------------------
+	copy(posView, particles.pos.data());
+	//int i = 0; _RPT3(0, "%f\t%f\t%f\n", particles.pos[i].x, particles.pos[i].y, particles.pos[i].z);
+}//--------------------------------------------------------------------------------------
 // Before handling window messages, DXUT passes incoming windows 
 // messages to the application through this callback function. If the application sets 
 // *pbNoFurtherProcessing to TRUE, then DXUT will not process this message.
 //--------------------------------------------------------------------------------------
-
 LRESULT CALLBACK MsgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, bool* pbNoFurtherProcessing,
 						 void* pUserContext){
 	// Pass messages to dialog resource manager calls so GUI state is updated correctly
 	*pbNoFurtherProcessing = g_dialogResourceManager.MsgProc(hWnd, uMsg, wParam, lParam);
 	if(*pbNoFurtherProcessing)
 		return 0;
-
 	// Pass messages to settings dialog if its active
 	if(g_d3dSettingsDlg.IsActive()){
 		g_d3dSettingsDlg.MsgProc(hWnd, uMsg, wParam, lParam);
