@@ -479,6 +479,7 @@
     <ClInclude Include="INBodyAmp.h" />
     <ClInclude Include="NBodyAmp.h" />
     <ClInclude Include="NBodyAmpMultiTiled.h" />
+    <ClInclude Include="NBodyAmpMy.h" />
     <ClInclude Include="NBodyAmpSimple.h" />
     <ClInclude Include="NBodyAmpTiled.h" />
     <CLInclude Include="resource.h" />

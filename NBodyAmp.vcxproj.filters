@@ -74,6 +74,7 @@
     <ClInclude Include="NBodyAmpTiled.h" />
     <ClInclude Include="NBodyAmpMultiTiled.h" />
     <ClInclude Include="INBodyAmp.h" />
+    <ClInclude Include="NBodyAmpMy.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="version.rc">
