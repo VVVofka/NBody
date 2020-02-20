@@ -43,7 +43,7 @@ struct ParticlesCpu{
 		return static_cast<int>(pos.size());
 	}
 }; // *************************************************************************************************
-//#else // !MY
+#else // !MY
 struct ParticlesCpuMy{
 	std::vector<int_3> pos;
 	std::vector<float_3> intend;
@@ -72,7 +72,7 @@ public:
 	ParticlesAmp(array<float_3, 1>& pos, array<float_3, 1>& vel) : pos(pos), vel(vel){}
 	inline int size() const{ return pos.extent.size(); }
 }; // ****************************************************************************************
-//#else // !MY
+#else // !MY
 struct ParticlesAmpMy{
 	array<int_3, 1>& pos;
 	array<float_3, 1>& intend;
@@ -109,7 +109,7 @@ public:
 		DataOld(new ParticlesAmp(m_posOld, m_velOld)),
 		DataNew(new ParticlesAmp(m_posNew, m_velNew)){}
 }; // *******************************************************************************************
-//#else // !MY
+#else // !MY
 struct TaskDataMy{
 public:
 	accelerator Accelerator;
@@ -161,7 +161,7 @@ std::vector<std::shared_ptr<TaskData>> CreateTasks(int numParticles,
 	AmpUtils::DebugListAccelerators(gpuAccelerators);
 	return tasks;
 }//--------------------------------------------------------------------------------------
-//#else // !MY
+#else // !MY
 std::vector<std::shared_ptr<TaskDataMy>> CreateTasksMy(int numParticles, int_3 sizes,
 												   accelerator_view renderView){
 	std::vector<accelerator> gpuAccelerators = AmpUtils::GetGpuAccelerators();
@@ -217,7 +217,7 @@ void LoadClusterParticles(ParticlesCpu& particles, int offset, int size, float_3
 		particles.vel[i] = velocity;
 	};
 } // //////////////////////////////////////////////////////////////////////////////////////////
-//#else // !MY
+#else // !MY
 void LoadClusterParticlesMy(ParticlesCpuMy& particlesMy, int_3 sizes){
 	std::random_device rd;
 	std::default_random_engine engine(rd());

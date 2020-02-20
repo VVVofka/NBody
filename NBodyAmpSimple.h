@@ -62,7 +62,7 @@ public:
 		});
 	} // ///////////////////////////////////////////////////////////////////////////////
 }; // *** class NBodyAmpSimple : public INBodyAmp *******************************************
-//#else // !MY
+#else // !MY
 class NBodyAmpSimpleMy : public INBodyAmpMy{
 private:
 	float m_softeningSquared;

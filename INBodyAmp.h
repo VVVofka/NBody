@@ -28,7 +28,7 @@ public:
 		int numParticles) const = 0;
 }; // *** class INBodyAmp *********************************************************************************
 
-//#else // !MY
+#else // !MY
 struct TaskDataMy;
 class INBodyAmpMy{
 public:

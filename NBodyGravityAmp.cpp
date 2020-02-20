@@ -49,7 +49,7 @@ enum ComputeType{
 	kMultiTile256,
 	kMultiTile512
 };//--------------------------------------------------------------------------------------
-//#else  // !MY
+#else  // !MY
 enum ComputeTypeMy{
 	Flat = 0,
 	D3
@@ -65,7 +65,7 @@ const float g_deltaTime = 0.1f;
 const int g_maxParticles = (57 * 1024); // Maximum number of particles in the n-body simulation.
 const int g_particleNumStepSize = 512;  // Number of particles added for each slider tick, cannot be less than the max tile size.
 const float g_Spread = 400.0f;          // Separation between the two clusters.
-//#else  // !MY
+#else  // !MY
 const float g_softeningSquaredMy = 0.0000015625f;
 const float g_dampingFactorMy = 0.9995f;
 const float g_particleMassMy = ((6.67300e-11f * 10000.0f) * 10000.0f * 10000.0f);
@@ -103,7 +103,7 @@ CComPtr<ID3D11Buffer>               g_pParticleBuffer;
 CComPtr<ID3D11InputLayout>          g_pParticleVertexLayout;
 CComPtr<ID3D11Buffer>               g_pConstantBuffer;
 CComPtr<ID3D11ShaderResourceView>   g_pShaderResView;
-//#else  // !MY
+#else  // !MY
 CDXUTDialogResourceManager          g_dialogResourceManagerMy;    // manager for shared resources of dialogs
 CModelViewerCamera                  g_cameraMy;                   // A model viewing camera
 CD3DSettingsDlg                     g_d3dSettingsDlgMy;           // Device settings dialog
@@ -147,7 +147,7 @@ std::vector<std::shared_ptr<TaskData>> g_deviceData;
 //  Particle colours.
 D3DXCOLOR                           g_particleColor;
 std::vector<D3DCOLOR>               g_particleColors;
-//#else  // !MY
+#else  // !MY
 #if !(defined(DEBUG) || defined(_DEBUG))
 int                                 g_numParticlesMy = (20 * 1024);
 #else
@@ -185,7 +185,7 @@ void CALLBACK OnD3D11FrameRender(ID3D11Device* pd3dDevice, ID3D11DeviceContext* 
 								 float fElapsedTime, void* pUserContext);
 void InitApp();
 void RenderText();
-//#else  // !MY
+#else  // !MY
 bool CALLBACK ModifyDeviceSettingsMy(DXUTDeviceSettings* pDeviceSettings, void* pUserContext);
 void CALLBACK OnFrameMoveMy(double fTime, float fElapsedTime, void* pUserContext);
 LRESULT CALLBACK MsgProcMy(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, bool* pbNoFurtherProcessing,
@@ -240,7 +240,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 #ifndef MY
 int WINAPI WinMainNonMy(HINSTANCE hInstance,HINSTANCE hPrevInstance,LPWSTR lpCmdLine,int nShowCmd);
 	return WinMainNonMy(hInstance,  hPrevInstance,  lpCmdLine,  nCmdShow);
-//#else // !MY
+#else // !MY
 int WINAPI WinMainMy(HINSTANCE hInstance,HINSTANCE hPrevInstance,LPWSTR lpCmdLine,int nShowCmd);
 	return WinMainMy(hInstance, hPrevInstance, lpCmdLine, nCmdShow);
 #endif // !MY
@@ -268,7 +268,7 @@ int WINAPI WinMainNonMy(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpC
 	DXUTMainLoop();                      // Enter into the DXUT render loop
 	return DXUTGetExitCode();
 }//--------------------------------------------------------------------------------------
-//#else // !MY
+#else // !MY
 int WINAPI WinMainMy(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow) {
 	DXUTSetCallbackDeviceChanging(ModifyDeviceSettingsMy);
 	DXUTSetCallbackMsgProc(MsgProcMy);
@@ -373,7 +373,7 @@ void InitApp(){
 	OutputDebugStringW(L"Forcing application to use the WARP accelerator");
 #endif
 }//--------------------------------------------------------------------------------------
-//#else  // !MY
+#else  // !MY
 void InitAppMy(){
 	g_d3dSettingsDlgMy.Init(&g_dialogResourceManagerMy);
 	g_HUDMy.Init(&g_dialogResourceManagerMy);
@@ -472,7 +472,7 @@ HRESULT CreateParticleBuffer(ID3D11Device* pd3dDevice){
 
 	return hr;
 }//--------------------------------------------------------------------------------------
-//#else  // !MY
+#else  // !MY
 HRESULT CreateParticleBufferMy(ID3D11Device* pd3dDevice){
 	HRESULT hr = S_OK;
 	D3D11_BUFFER_DESC bufferDesc =
@@ -523,7 +523,7 @@ void LoadParticles(){
 		copy(particles.vel.begin(), velView);
 	}
 } // ///////////////////////////////////////////////////////////////////////////////////////
-//#else  // !MY
+#else  // !MY
 void LoadParticlesMy(int_3 sizes){
 	// Create particles in CPU memory.
 	ParticlesCpuMy particles(g_maxParticlesMy, sizes);
@@ -596,7 +596,7 @@ std::shared_ptr<INBodyAmp> NBodyFactory(ComputeType type){
 		break;
 	}
 }//--------------------------------------------------------------------------------------
-//#else  // !MY
+#else  // !MY
 std::shared_ptr<INBodyAmpMy> NBodyFactoryMy(ComputeTypeMy type){
 	switch(type){
 	case ComputeTypeMy::D3:
@@ -661,7 +661,7 @@ HRESULT CreateParticlePosBuffer(ID3D11Device* pd3dDevice){
 	V_RETURN(hr);
 	return hr;
 }//--------------------------------------------------------------------------------------
-//#else  // !MY
+#else  // !MY
 HRESULT CreateParticlePosBufferMy(ID3D11Device* pd3dDevice){
 	HRESULT hr = S_OK;
 	accelerator_view renderView =
@@ -730,7 +730,7 @@ bool CALLBACK ModifyDeviceSettings(DXUTDeviceSettings* pDeviceSettings, void* pU
 	}
 	return true;
 }//--------------------------------------------------------------------------------------
-//#else  // !MY
+#else  // !MY
 bool CALLBACK ModifyDeviceSettingsMy(DXUTDeviceSettings* pDeviceSettings, void* pUserContext){
 	assert(pDeviceSettings->ver == DXUT_D3D11_DEVICE);
 	// Disable vsync
@@ -766,7 +766,7 @@ void CALLBACK OnFrameMove(double fTime, float fElapsedTime, void* pUserContext){
 	// Update the camera's position based on user input 
 	g_camera.FrameMove(fElapsedTime);
 }//--------------------------------------------------------------------------------------
-//#else  // !MY
+#else  // !MY
 void CALLBACK OnFrameMoveMy(double fTime, float fElapsedTime, void* pUserContext){
 	g_pNBodyMy->Integrate(g_deviceDataMy, g_numParticlesMy, g_SizesMy);
 	std::for_each(g_deviceDataMy.begin(), g_deviceDataMy.end(), [](std::shared_ptr<TaskDataMy>& t){
@@ -807,7 +807,7 @@ LRESULT CALLBACK MsgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, boo
 	g_camera.HandleMessages(hWnd, uMsg, wParam, lParam);
 	return 0;
 }//--------------------------------------------------------------------------------------
-//#else  // !MY
+#else  // !MY
 LRESULT CALLBACK MsgProcMy(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, bool* pbNoFurtherProcessing,
 						 void* pUserContext){
 	// Pass messages to dialog resource manager calls so GUI state is updated correctly
@@ -871,7 +871,7 @@ void CALLBACK OnGUIEvent(UINT nEvent, int nControlID, CDXUTControl* pControl, vo
 	break;
 	}
 } // ///////////////////////////////////////////////////////////////////////////////////////////////////////
-//#else  // !MY
+#else  // !MY
 void SetBodyTextMy();
 void CALLBACK OnGUIEventMy(UINT nEvent, int nControlID, CDXUTControl* pControl, void* pUserContext){
 	switch(nControlID){
@@ -928,7 +928,7 @@ void SetBodyText(){
 	swprintf_s(szTemp, L"Bodies: %d", g_numParticles);
 	g_HUD.GetStatic(IDC_NBODIES_LABEL)->SetText(szTemp);
 } // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//#else  // !MY
+#else  // !MY
 void SetBodyTextMy(){
 	WCHAR szTemp[256];
 	swprintf_s(szTemp, L"Bodies: %d", g_numParticlesMy);
@@ -1043,7 +1043,7 @@ HRESULT CALLBACK OnD3D11CreateDevice(ID3D11Device* pd3dDevice, const DXGI_SURFAC
 	g_camera.SetViewParams(&vecEye, &vecAt);
 	return S_OK;
 } // ////////////////////////////////////////////////////////////////////////////////////////////////////
-//#else  // !MY
+#else  // !MY
 HRESULT CALLBACK OnD3D11CreateDeviceMy(ID3D11Device* pd3dDevice, const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc,
 									   void* pUserContext){
 	HRESULT hr = S_OK;
@@ -1162,7 +1162,7 @@ HRESULT CALLBACK OnD3D11ResizedSwapChain(ID3D11Device* pd3dDevice, IDXGISwapChai
 	g_sampleUI.SetSize(170, 300);
 	return hr;
 } // //////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//#else  // !MY
+#else  // !MY
 HRESULT CALLBACK OnD3D11ResizedSwapChainMy(ID3D11Device* pd3dDevice, IDXGISwapChain* pSwapChain,
 										   const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc, void* pUserContext){
 	HRESULT hr = S_OK;
@@ -1188,7 +1188,7 @@ HRESULT CALLBACK OnD3D11ResizedSwapChainMy(ID3D11Device* pd3dDevice, IDXGISwapCh
 void CALLBACK OnD3D11ReleasingSwapChain(void* pUserContext){
 	g_dialogResourceManager.OnD3D11ReleasingSwapChain();
 }//--------------------------------------------------------------------------------------
-//#else  // !MY
+#else  // !MY
 void CALLBACK OnD3D11ReleasingSwapChainMy(void* pUserContext){
 	g_dialogResourceManagerMy.OnD3D11ReleasingSwapChain();
 }//--------------------------------------------------------------------------------------
@@ -1217,7 +1217,7 @@ void RenderText(){
 
 	g_pTxtHelper->End();
 } // ////////////////////////////////////////////////////////////////////////////////////////////////////
-//#else  // !MY
+#else  // !MY
 void RenderTextMy(){
 	g_pTxtHelperMy->Begin();
 	g_pTxtHelperMy->SetInsertionPos(2, 0);
@@ -1290,7 +1290,7 @@ bool RenderParticles(ID3D11DeviceContext* pd3dImmediateContext, D3DXMATRIX& view
 	pd3dImmediateContext->OMSetDepthStencilState(pDepthStencilState0, StencilRef0);
 	return true;
 } // ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//#else  // !MY
+#else  // !MY
 bool RenderParticlesMy(ID3D11DeviceContext* pd3dImmediateContext, D3DXMATRIX& view, D3DXMATRIX& projection){
 	CComPtr<ID3D11BlendState> pBlendState0;
 	CComPtr<ID3D11DepthStencilState> pDepthStencilState0;
@@ -1369,7 +1369,7 @@ void CALLBACK OnD3D11FrameRender(ID3D11Device* pd3dDevice, ID3D11DeviceContext* 
 	g_sampleUI.OnRender(fElapsedTime);
 	RenderText();
 }//--------------------------------------------------------------------------------------
-//#else  // !MY
+#else  // !MY
 void CALLBACK OnD3D11FrameRenderMy(ID3D11Device* pd3dDevice, ID3D11DeviceContext* pd3dImmediateContext, double fTime,
 								   float fElapsedTime, void* pUserContext){
 	// If the settings dialog is being shown, then render it instead of rendering the app's scene
@@ -1407,7 +1407,7 @@ void CALLBACK OnD3D11DestroyDevice(void* pUserContext){
 	g_d3dSettingsDlg.OnD3D11DestroyDevice();
 	DXUTGetGlobalResourceCache().OnDestroyDevice();
 } // ////////////////////////////////////////////////////////////////////////////////////
-//#else // !MY
+#else // !MY
 void CALLBACK OnD3D11DestroyDeviceMy(void* pUserContext){
 	g_dialogResourceManagerMy.OnD3D11DestroyDevice();
 	g_d3dSettingsDlgMy.OnD3D11DestroyDevice();
