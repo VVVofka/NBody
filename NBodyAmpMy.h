@@ -1,6 +1,6 @@
 #pragma once
 #include "NBodyAmp.h"
-
+#include <crtdbg.h>
 class NBodyAmpMy : public INBodyAmp{
 private:
     float m_softeningSquared;
@@ -43,9 +43,12 @@ public:
             vel += acc * deltaTime;
             vel *= dampingFactor;
             pos += vel * deltaTime;
+            //if(pos.x < 0.0f)                pos.x = 0.0f;
+            //if(pos.get_x() > 0.3f)                 pos.set_x(0.3f);
 
             particlesOut.pos[idx] = pos;
             particlesOut.vel[idx] = vel;
         });
+    //_RPT1(0, "%f\n", particlesOut.pos(0).get_x());
     }
 }; // *************************************************************************************************

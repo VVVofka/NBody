@@ -90,7 +90,7 @@ int                                 g_numParticles = (20 * 1024);           // T
 int                                 g_numParticles = g_particleNumStepSize;
 #endif
 ComputeType                         g_eComputeType; // Default integrator compute type  = ComputeType::kSingleSimple
-std::shared_ptr<INBodyAmp>          g_pNBody;                               // The current integrator
+std::shared_ptr<INBodyAmp>          g_pNBody;       // The current integrator
 
 //  Particle data structures.
 
@@ -141,7 +141,6 @@ void RenderText();
 // Helper function to compile an hlsl shader from file, 
 // its binary compiled code is returned
 //--------------------------------------------------------------------------------------
-
 HRESULT CompileShaderFromFile(WCHAR* szFileName, LPCSTR szEntryPoint, LPCSTR szShaderModel, ID3DBlob** ppBlobOut){
 	HRESULT hr = S_OK;
 
@@ -154,10 +153,8 @@ HRESULT CompileShaderFromFile(WCHAR* szFileName, LPCSTR szEntryPoint, LPCSTR szS
 		if(pErrorBlob != nullptr)
 			OutputDebugStringA((char*)pErrorBlob->GetBufferPointer());
 	}
-
 	return hr;
 }
-
 //--------------------------------------------------------------------------------------
 // Entry point to the program. Initializes everything and goes into a message processing 
 // loop. Idle time is used to render the scene.
@@ -198,11 +195,9 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 
 	return DXUTGetExitCode();
 }
-
 //--------------------------------------------------------------------------------------
 // Initialize the app 
 //--------------------------------------------------------------------------------------
-
 void InitApp(){
 	g_d3dSettingsDlg.Init(&g_dialogResourceManager);
 	g_HUD.Init(&g_dialogResourceManager);
@@ -226,7 +221,7 @@ void InitApp(){
 	std::wstring processorNames[] =
 	{
 		std::wstring(L"C++ AMP Simple Model "),                // kCpuSingle
-		std::wstring(L"C++ AMP My Model "),                // kCpuSingle
+		std::wstring(L"C++ AMP My Model "),                    // kCpuSingle
 		std::wstring(L"C++ AMP Tiled Model 64 "),
 		std::wstring(L"C++ AMP Tiled Model 128 "),
 		std::wstring(L"C++ AMP Tiled Model 256 "),
@@ -248,14 +243,14 @@ void InitApp(){
 
 	for(int i = kSingleSimple; i <= kSingleTile512; ++i)
 		pComboBox->AddItem(processorNames[i].c_str(), nullptr);
-	g_eComputeType = kSingleTile256;
+	g_eComputeType = ComputeType::kSingleTile256;
 
 	//  If there us more than one GPU then allow the user to use them together.
 
 	if(AmpUtils::GetGpuAccelerators().size() >= 2){
 		for(int i = kMultiTile64; i <= kMultiTile512; ++i)
 			pComboBox->AddItem(processorNames[i].c_str(), nullptr);
-		g_eComputeType = kMultiTile256;
+		g_eComputeType = ComputeType::kMultiTile256;
 	}
 	g_eComputeType = ComputeType::kSingleMy;
 	g_HUD.GetComboBox(IDC_COMPUTETYPECOMBO)->SetSelectedByData((void*)g_eComputeType);
@@ -264,7 +259,7 @@ void InitApp(){
 	g_HUD.GetSlider(IDC_NBODIES_SLIDER)->SetValue((g_numParticles / g_particleNumStepSize));
 	g_particleColors.resize(kMultiTile512 + 1);
 	g_particleColors[kSingleSimple] = D3DXCOLOR(0.05f, 1.0f, 0.05f, 1.0f);
-	g_particleColors[kSingleMy] = D3DXCOLOR(0.05f, 0.75f, 0.75f, 1.0f);
+	g_particleColors[kSingleMy] = D3DXCOLOR(0.05f, 0.7f, 0.7f, 1.0f);
 	g_particleColors[kSingleTile64] = D3DXCOLOR(0.05f, 1.0f, 0.05f, 1.0f);
 	g_particleColors[kSingleTile128] = D3DXCOLOR(0.05f, 1.0f, 0.05f, 1.0f);
 	g_particleColors[kSingleTile256] = D3DXCOLOR(0.05f, 1.0f, 0.05f, 1.0f);
@@ -322,14 +317,10 @@ HRESULT CreateParticleBuffer(ID3D11Device* pd3dDevice){
 //--------------------------------------------------------------------------------------
 //  Load particles. Two clusters set to collide.
 //--------------------------------------------------------------------------------------
-
 void LoadParticles(){
 	const float centerSpread = g_Spread * 0.50f;
-
 	// Create particles in CPU memory.
-
 	ParticlesCpu particles(g_maxParticles);
-
 	for(int i = 0; i < g_maxParticles; i += g_particleNumStepSize){
 		LoadClusterParticles(particles, i, (g_particleNumStepSize / 2),
 							 float_3(centerSpread, 0.0f, 0.0f),
@@ -340,9 +331,7 @@ void LoadParticles(){
 							 float_3(0, 0, 20),
 							 g_Spread);
 	}
-
 	// Copy particles to GPU memory.
-
 	index<1> begin(0);
 	extent<1> end(g_maxParticles);
 	for(size_t i = 0; i < g_deviceData.size(); ++i){
@@ -685,10 +674,8 @@ HRESULT CALLBACK OnD3D11CreateDevice(ID3D11Device* pd3dDevice, const DXGI_SURFAC
 	D3DXVECTOR3 vecEye(-g_Spread * 2, g_Spread * 4, -g_Spread * 3);
 	D3DXVECTOR3 vecAt(0.0f, 0.0f, 0.0f);
 	g_camera.SetViewParams(&vecEye, &vecAt);
-
 	return S_OK;
-}
-
+} // //////////////////////////////////////////////////////////////////////////////////////////////////////////
 HRESULT CALLBACK OnD3D11ResizedSwapChain(ID3D11Device* pd3dDevice, IDXGISwapChain* pSwapChain,
 										 const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc, void* pUserContext){
 	HRESULT hr = S_OK;
@@ -787,10 +774,8 @@ bool RenderParticles(ID3D11DeviceContext* pd3dImmediateContext, D3DXMATRIX& view
 	pd3dImmediateContext->GSSetShader(nullptr, nullptr, 0);
 	pd3dImmediateContext->OMSetBlendState(pBlendState0, &BlendFactor0.r, SampleMask0);
 	pd3dImmediateContext->OMSetDepthStencilState(pDepthStencilState0, StencilRef0);
-
 	return true;
-}
-
+} // ///////////////////////////////////////////////////////////////////////////////////////////////////////
 void CALLBACK OnD3D11FrameRender(ID3D11Device* pd3dDevice, ID3D11DeviceContext* pd3dImmediateContext, double fTime,
 								 float fElapsedTime, void* pUserContext){
 	// If the settings dialog is being shown, then render it instead of rendering the app's scene
@@ -798,7 +783,6 @@ void CALLBACK OnD3D11FrameRender(ID3D11Device* pd3dDevice, ID3D11DeviceContext* 
 		g_d3dSettingsDlg.OnRender(fElapsedTime);
 		return;
 	}
-
 	const float clearColor[4] = {0.0, 0.0, 0.0, 0.0};
 	ID3D11RenderTargetView* pRTV = DXUTGetD3D11RenderTargetView();
 	pd3dImmediateContext->ClearRenderTargetView(pRTV, clearColor);
@@ -818,15 +802,12 @@ void CALLBACK OnD3D11FrameRender(ID3D11Device* pd3dDevice, ID3D11DeviceContext* 
 	g_HUD.OnRender(fElapsedTime);
 	g_sampleUI.OnRender(fElapsedTime);
 	RenderText();
-}
-
-//--------------------------------------------------------------------------------------
+}//--------------------------------------------------------------------------------------
 // This callback function will be called immediately after the Direct3D device has 
 // been destroyed, which generally happens as a result of application termination or 
 // windowed/full screen toggles. Resources created in the OnD3D11CreateDevice callback 
 // should be released here, which generally includes all D3DPOOL_MANAGED resources. 
 //--------------------------------------------------------------------------------------
-
 void CALLBACK OnD3D11DestroyDevice(void* pUserContext){
 	g_dialogResourceManager.OnD3D11DestroyDevice();
 	g_d3dSettingsDlg.OnD3D11DestroyDevice();
