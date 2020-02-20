@@ -6,7 +6,7 @@
 #pragma once
 #include <amp_graphics.h>
 #include <d3dx9math.h>
-//#define MY
+#define MY
 using namespace concurrency::graphics;
 //--------------------------------------------------------------------------------------
 //  Utility functions for vector calculations.

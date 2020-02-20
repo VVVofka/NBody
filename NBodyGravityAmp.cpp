@@ -193,6 +193,8 @@ LRESULT CALLBACK MsgProcMy(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, b
 void CALLBACK OnGUIEventMy(UINT nEvent, int nControlID, CDXUTControl* pControl, void* pUserContext);
 //void CorrectNumberOfParticles();
 inline void SetBodyTextMy();
+bool CALLBACK IsD3D11DeviceAcceptable(const CD3D11EnumAdapterInfo* AdapterInfo, UINT Output, const CD3D11EnumDeviceInfo* DeviceInfo,
+									  DXGI_FORMAT BackBufferFormat, bool bWindowed, void* pUserContext);
 //bool CALLBACK IsD3D11DeviceAcceptableMy(const CD3D11EnumAdapterInfo* AdapterInfo, UINT Output, const CD3D11EnumDeviceInfo* DeviceInfo,
 //									  DXGI_FORMAT BackBufferFormat, bool bWindowed, void* pUserContext);
 HRESULT CALLBACK OnD3D11CreateDeviceMy(ID3D11Device* pd3dDevice, const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc,
@@ -405,24 +407,25 @@ void InitAppMy(){
 		std::wstring(L"C++ AMP Tiled Model 256:xx GPUs"),
 		std::wstring(L"C++ AMP Tiled Model 512:xx GPUs")       // kMultiTile512
 	};
-	WCHAR buf[3];
-	if(_itow_s(static_cast<int>(AmpUtils::GetGpuAccelerators().size()), buf, 3, 10) == 0)
-		for(int i = kMultiTile64; i <= kMultiTile512; ++i)
-			processorNames[i].replace(24, 2, buf);
-	std::wstring path = accelerator(accelerator::default_accelerator).device_path;
+	//WCHAR buf[3];
+	//if(_itow_s(static_cast<int>(AmpUtils::GetGpuAccelerators().size()), buf, 3, 10) == 0)
+	//	for(int i = kMultiTile64; i <= kMultiTile512; ++i)
+	//		processorNames[i].replace(24, 2, buf);
+	//std::wstring path = accelerator(accelerator::default_accelerator).device_path;
 
-	//  If there is a GPU accelerator then use it. 
-	//  Otherwise add a REF accelerator and display warning.
-	for(int i = kSingleSimple; i <= kSingleTile512; ++i)
-		pComboBox->AddItem(processorNames[i].c_str(), nullptr);
+	////  If there is a GPU accelerator then use it. 
+	////  Otherwise add a REF accelerator and display warning.
+	//for(int i = kSingleSimple; i <= kSingleTile512; ++i)
+	//	pComboBox->AddItem(processorNames[i].c_str(), nullptr);
+	//g_eComputeTypeMy = ComputeTypeMy::D3;
+
+	////  If there us more than one GPU then allow the user to use them together.
+	//if(AmpUtils::GetGpuAccelerators().size() >= 2){
+	//	for(int i = kMultiTile64; i <= kMultiTile512; ++i)
+	//		pComboBox->AddItem(processorNames[i].c_str(), nullptr);
+	//	g_eComputeTypeMy = ComputeTypeMy::D3;
+	//}
 	g_eComputeTypeMy = ComputeTypeMy::D3;
-
-	//  If there us more than one GPU then allow the user to use them together.
-	if(AmpUtils::GetGpuAccelerators().size() >= 2){
-		for(int i = kMultiTile64; i <= kMultiTile512; ++i)
-			pComboBox->AddItem(processorNames[i].c_str(), nullptr);
-		g_eComputeTypeMy = ComputeTypeMy::D3;
-	}
 	g_HUDMy.GetComboBox(IDC_COMPUTETYPECOMBO)->SetSelectedByData((void*)g_eComputeTypeMy);
 	pComboBox->SetSelectedByIndex(g_eComputeTypeMy);
 
@@ -1053,7 +1056,7 @@ HRESULT CALLBACK OnD3D11CreateDeviceMy(ID3D11Device* pd3dDevice, const DXGI_SURF
 	CComPtr<ID3D11DeviceContext> pd3dImmediateContext = DXUTGetD3D11DeviceContext();
 	V_RETURN(g_dialogResourceManagerMy.OnD3D11CreateDevice(pd3dDevice, pd3dImmediateContext));
 	V_RETURN(g_d3dSettingsDlgMy.OnD3D11CreateDevice(pd3dDevice));
-	g_pTxtHelper = std::unique_ptr<CDXUTTextHelper>(new CDXUTTextHelper(pd3dDevice, pd3dImmediateContext, &g_dialogResourceManagerMy, 15));
+	g_pTxtHelperMy = std::unique_ptr<CDXUTTextHelper>(new CDXUTTextHelper(pd3dDevice, pd3dImmediateContext, &g_dialogResourceManagerMy, 15));
 
 	CComPtr<ID3DBlob> pBlobRenderParticlesVS;
 	CComPtr<ID3DBlob> pBlobRenderParticlesGS;
@@ -1319,7 +1322,7 @@ bool RenderParticlesMy(ID3D11DeviceContext* pd3dImmediateContext, D3DXMATRIX& vi
 	ResourceData* pCBGS = static_cast<ResourceData*>(mappedResource.pData);
 	D3DXMatrixMultiply(&pCBGS->worldViewProj, &view, &projection);
 	D3DXMatrixInverse(&pCBGS->inverseView, nullptr, &view);
-	pCBGS->color = g_particleColor;
+	pCBGS->color = g_particleColorMy;
 	pd3dImmediateContext->Unmap(g_pConstantBufferMy, 0);
 	pd3dImmediateContext->GSSetConstantBuffers(0, 1, &g_pConstantBufferMy.p);
 	pd3dImmediateContext->PSSetShaderResources(0, 1, &g_pShaderResViewMy.p);
