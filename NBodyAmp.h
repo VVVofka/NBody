@@ -31,6 +31,7 @@ using namespace concurrency::graphics;
 //
 //  This is an struct of arrays, rather than the more conventional array of structs used by
 //  the n-body CPU example. In general structs of arrays are more efficient for GPU programming.
+#ifndef MY
 struct ParticlesCpu{
 	std::vector<float_3> pos;
 	std::vector<float_3> vel;
@@ -42,6 +43,7 @@ struct ParticlesCpu{
 		return static_cast<int>(pos.size());
 	}
 }; // *************************************************************************************************
+//#else // !MY
 struct ParticlesCpuMy{
 	std::vector<int_3> pos;
 	std::vector<float_3> intend;
@@ -58,10 +60,11 @@ struct ParticlesCpuMy{
 		return static_cast<int>(pos.size());
 	}
 }; // *************************************************************************************************
-
+#endif // !MY
 //  Data structure for storing particles on the C++ AMP accelerator.
 //  This is an struct of arrays, rather than the more conventional array of structs used by
 //  the n-body CPU example. In general structs of arrays are more efficient for GPU programming.
+#ifndef MY
 struct ParticlesAmp{
 	array<float_3, 1>& pos;
 	array<float_3, 1>& vel;
@@ -69,6 +72,7 @@ public:
 	ParticlesAmp(array<float_3, 1>& pos, array<float_3, 1>& vel) : pos(pos), vel(vel){}
 	inline int size() const{ return pos.extent.size(); }
 }; // ****************************************************************************************
+//#else // !MY
 struct ParticlesAmpMy{
 	array<int_3, 1>& pos;
 	array<float_3, 1>& intend;
@@ -81,9 +85,10 @@ public:
 	{}
 	inline int size() const{ return pos.extent.size(); }
 }; // ****************************************************************************************
-
+#endif // !MY
 //  Structure storing all the data associated with processing a subset of 
 //  particles on a single C++ AMP accelerator.
+#ifndef MY
 struct TaskData{
 public:
 	accelerator Accelerator;
@@ -104,6 +109,7 @@ public:
 		DataOld(new ParticlesAmp(m_posOld, m_velOld)),
 		DataNew(new ParticlesAmp(m_posNew, m_velNew)){}
 }; // *******************************************************************************************
+//#else // !MY
 struct TaskDataMy{
 public:
 	accelerator Accelerator;
@@ -128,6 +134,8 @@ public:
 		DataOld(new ParticlesAmpMy(m_posOld, m_intendOld, m_arrayOld)),
 		DataNew(new ParticlesAmpMy(m_posNew, m_intendNew, m_arrayNew)){}
 }; // *******************************************************************************************
+#endif // !MY
+#ifndef MY
 std::vector<std::shared_ptr<TaskData>> CreateTasks(int numParticles,
 												   accelerator_view renderView){
 	std::vector<accelerator> gpuAccelerators = AmpUtils::GetGpuAccelerators();
@@ -153,6 +161,7 @@ std::vector<std::shared_ptr<TaskData>> CreateTasks(int numParticles,
 	AmpUtils::DebugListAccelerators(gpuAccelerators);
 	return tasks;
 }//--------------------------------------------------------------------------------------
+//#else // !MY
 std::vector<std::shared_ptr<TaskDataMy>> CreateTasksMy(int numParticles, int_3 sizes,
 												   accelerator_view renderView){
 	std::vector<accelerator> gpuAccelerators = AmpUtils::GetGpuAccelerators();
@@ -178,6 +187,7 @@ std::vector<std::shared_ptr<TaskDataMy>> CreateTasksMy(int numParticles, int_3 s
 	AmpUtils::DebugListAccelerators(gpuAccelerators);
 	return tasks;
 }//--------------------------------------------------------------------------------------
+#endif // !MY
 //  Calculate the acceleration (force * mass) change for a pair of particles.
 void BodyBodyInteraction(float_3& acc, const float_3 particlePosition,
 						 const float_3 otherParticlePosition,
@@ -193,6 +203,7 @@ void BodyBodyInteraction(float_3& acc, const float_3 particlePosition,
 	acc += r * s;
 }//--------------------------------------------------------------------------------------
 //  Utility functions.
+#ifndef MY
 void LoadClusterParticles(ParticlesCpu& particles, int offset, int size, float_3 center, float_3 velocity, float spread){
 	std::random_device rd;
 	std::default_random_engine engine(rd());
@@ -206,6 +217,7 @@ void LoadClusterParticles(ParticlesCpu& particles, int offset, int size, float_3
 		particles.vel[i] = velocity;
 	};
 } // //////////////////////////////////////////////////////////////////////////////////////////
+//#else // !MY
 void LoadClusterParticlesMy(ParticlesCpuMy& particlesMy, int_3 sizes){
 	std::random_device rd;
 	std::default_random_engine engine(rd());
@@ -231,3 +243,4 @@ void LoadClusterParticlesMy(ParticlesCpuMy& particlesMy, int_3 sizes){
 		particlesMy.area[x][y][z] = 1;
 	}
 } // //////////////////////////////////////////////////////////////////////////////////////////
+#endif // !MY

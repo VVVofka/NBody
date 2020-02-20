@@ -11,6 +11,7 @@
 //  Simple integration implementation.
 //--------------------------------------------------------------------------------------
 //  This integrator does not specify a tiling or use tile static memory.
+#ifndef MY
 class NBodyAmpSimple : public INBodyAmp{
 private:
 	float m_softeningSquared;
@@ -61,6 +62,7 @@ public:
 		});
 	} // ///////////////////////////////////////////////////////////////////////////////
 }; // *** class NBodyAmpSimple : public INBodyAmp *******************************************
+//#else // !MY
 class NBodyAmpSimpleMy : public INBodyAmpMy{
 private:
 	float m_softeningSquared;
@@ -110,3 +112,4 @@ public:
 		});
 	} // ///////////////////////////////////////////////////////////////////////////////
 }; // *** class NBodyAmpSimple : public INBodyAmp *******************************************
+#endif // !MY

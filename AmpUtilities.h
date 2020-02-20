@@ -22,7 +22,6 @@ public:
 	static void DebugListAccelerators(std::vector<concurrency::accelerator> accelerators) {
 		if (accelerators.empty())
 			return;
-
 		std::wostringstream oss;
 		oss << "Found these C++ AMP accelerators:" << std::endl;
 		std::for_each(accelerators.cbegin(), accelerators.cend(), [&oss](const concurrency::accelerator& a) {
