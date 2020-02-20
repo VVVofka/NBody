@@ -84,7 +84,6 @@ CComPtr<ID3D11ShaderResourceView>   g_pShaderResView;
 //--------------------------------------------------------------------------------------
 // Nbody functionality 
 //--------------------------------------------------------------------------------------
-
 #if !(defined(DEBUG) || defined(_DEBUG))
 int                                 g_numParticles = (20 * 1024);           // The current number of particles in the n-body simulation
 #else
@@ -100,11 +99,9 @@ std::vector<std::shared_ptr<TaskData>> g_deviceData;
 //  Particle colours.
 D3DXCOLOR                           g_particleColor;
 std::vector<D3DCOLOR>               g_particleColors;
-
 //--------------------------------------------------------------------------------------
 // UI control IDs
 //--------------------------------------------------------------------------------------
-
 #define IDC_TOGGLEFULLSCREEN        1
 #define IDC_TOGGLEREF               3
 #define IDC_CHANGEDEVICE            4
