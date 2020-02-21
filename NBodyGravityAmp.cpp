@@ -44,13 +44,12 @@ const float g_dampingFactor = 0.9995f;
 const float g_particleMass = ((6.67300e-11f * 10000.0f) * 10000.0f * 10000.0f);
 const float g_deltaTime = 0.1f;
 
-const int g_maxParticles = (57 * 1024);                  // Maximum number of particles in the n-body simulation.
-const int g_particleNumStepSize = 512;                        // Number of particles added for each slider tick, cannot be less than the max tile size.
+const int g_maxParticles = (57 * 1024);            // Maximum number of particles in the n-body simulation.
+const int g_particleNumStepSize = 512;             // Number of particles added for each slider tick, cannot be less than the max tile size.
 
 const float g_Spread = 400.0f;                     // Separation between the two clusters.
 //--------------------------------------------------------------------------------------
 // Global variables
-//--------------------------------------------------------------------------------------
 CDXUTDialogResourceManager          g_dialogResourceManager;    // manager for shared resources of dialogs
 CModelViewerCamera                  g_camera;                   // A model viewing camera
 CD3DSettingsDlg                     g_d3dSettingsDlg;           // Device settings dialog
@@ -277,8 +276,10 @@ HRESULT CreateParticleBuffer(ID3D11Device* pd3dDevice){
 	ZeroMemory(&resourceData, sizeof(D3D11_SUBRESOURCE_DATA));
 
 	std::vector<ParticleVertex> vertices(g_maxParticles);
-	std::for_each(vertices.begin(), vertices.end(), [](ParticleVertex& v){ v.color = D3DXCOLOR(1, 1, 0.2f, 1); });
-
+	std::for_each(vertices.begin(), 
+				  vertices.end(), 
+				  [](ParticleVertex& v){ v.color = D3DXCOLOR(1, 1, 0.2f, 1); }
+	);
 	resourceData.pSysMem = &vertices[0];
 	g_pParticleBuffer = nullptr;
 	V_RETURN(pd3dDevice->CreateBuffer(&bufferDesc, &resourceData, &g_pParticleBuffer));

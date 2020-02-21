@@ -7,19 +7,21 @@ private:
     float m_dampingFactor;
     float m_deltaTime;
     float m_particleMass;
-
+    float_3 sizes;
 public:
     NBodyAmpMy(float softeningSquared, float dampingFactor, float deltaTime, float particleMass) :
         m_softeningSquared(softeningSquared),
         m_dampingFactor(dampingFactor),
         m_deltaTime(deltaTime),
-        m_particleMass(particleMass){}
+        m_particleMass(particleMass){
+        sizes = float_3(1025, 513, 257);
+    } // //////////////////////////////////////////////////////////////////////////////////////////////
 
     inline int TileSize() const{ return 1; }   //  No tiling.
 
     void Integrate(const std::vector<std::shared_ptr<TaskData>>& particleData,
                    int numParticles) const{
-        assert(numParticles > 0);
+        assert(numParticles > 0);              // 512
         assert((numParticles % 4) == 0);
 
         ParticlesAmp particlesIn = *particleData[0]->DataOld;
@@ -62,8 +64,8 @@ public:
                 vel.z = -vel.z;
             //if(pos.get_x() > 0.3f)                 pos.set_x(0.3f);
 
-            particlesOut.pos[idx] = pos;
-            particlesOut.vel[idx] = vel;
+            particlesOut.pos[idx] = pos;   // *particleData[0]->DataNew
+            particlesOut.vel[idx] = vel;   // *particleData[0]->DataNew
         });
     //_RPT1(0, "%f\n", particlesOut.pos(0).get_x());
     }
