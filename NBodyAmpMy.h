@@ -43,7 +43,23 @@ public:
             vel += acc * deltaTime;
             vel *= dampingFactor;
             pos += vel * deltaTime;
-            //if(pos.x < 0.0f)                pos.x = 0.0f;
+            //pos.x = 0.0f;
+            //pos.y = 0.0f;
+            //pos.z = 0.0f;
+            if(pos.x < -100.0f)
+                vel.x = -vel.x;
+            if(pos.x > 100.0f)
+                vel.x = -vel.x;
+
+            if(pos.y < -100.0f)
+                vel.y = -vel.y;
+            if(pos.y > 100.0f)
+                vel.y = -vel.y;
+
+            if(pos.z < -100.0f)
+                vel.z = -vel.z;
+            if(pos.z > 100.0f)
+                vel.z = -vel.z;
             //if(pos.get_x() > 0.3f)                 pos.set_x(0.3f);
 
             particlesOut.pos[idx] = pos;

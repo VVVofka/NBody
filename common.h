@@ -71,4 +71,10 @@ struct FreeDeleter
         static_assert(std::is_trivially_destructible<T>::value, "Cannot free memory for a type with a non-trivial destructor, use delete.");
         std::free(ptr);
     }
-};
+}; // ******************************************************************************************
+//char buf4ConvertFloat3[255];
+//char* f3s(float_3 f){
+//    sprintf_s(buf4ConvertFloat3, 255, "%f\t%f\t%f", f.x, f.y, f.z);
+//    return buf4ConvertFloat3;
+//} // /////////////////////////////////////////////////////////////////////////////
+
