@@ -1,6 +1,5 @@
 ﻿// C++ AMP: Accelerated Massive Parallelism with Microsoft Visual C++
 // Copyright (c) 2012-2013 Ade Miller & Kate Gregory.  All rights reserved.
-// This code released under the terms of the 
 // Microsoft Public License (Ms-PL), http://ampbook.codeplex.com/license.
 #pragma once
 #include <math.h>
@@ -39,13 +38,12 @@ struct ParticlesCpu{
 		assert(pos.size() == vel.size());
 		return static_cast<int>(pos.size());
 	}
-};
+}; // ********************************************************************************************
 
 //  Data structure for storing particles on the C++ AMP accelerator.
 //
 //  This is an struct of arrays, rather than the more conventional array of structs used by
 //  the n-body CPU example. In general structs of arrays are more efficient for GPU programming.
-
 struct ParticlesAmp{
 	array<float_3, 1>& pos;
 	array<float_3, 1>& vel;
@@ -81,10 +79,9 @@ public:
 		DataOld(new ParticlesAmp(m_posOld, m_velOld)),
 		DataNew(new ParticlesAmp(m_posNew, m_velNew)){}
 }; // ***************************************************************************
-//Эта функция проверяет существование ускорителей и создает массив
-//тех из них, которые не эмулируются на ЦП.Она также подготавлива -
-//ет вектор разделяемых указателей на структуры TaskData, с которы -
-//ми будут работать ускорители.
+// Эта функция проверяет существование ускорителей и создает массив тех из них,
+// которые не эмулируются на ЦП.Она также подготавливает вектор разделяемых 
+// указателей на структуры TaskData, с которыми будут работать ускорители.
 std::vector<std::shared_ptr<TaskData>> CreateTasks(int numParticles,
 												   accelerator_view renderView){
 	std::vector<accelerator> gpuAccelerators = AmpUtils::GetGpuAccelerators();
@@ -94,6 +91,7 @@ std::vector<std::shared_ptr<TaskData>> CreateTasks(int numParticles,
 	if(!gpuAccelerators.empty()){
 		//  Create first accelerator attached to main view. This will attach the C++ AMP 
 		//  array<float_3> to the D3D buffer on the first GPU.
+
 		//  Создать первый ускоритель, присоединенный к главному
         //  представлению. В результате объект C++ AMP
         //  array<ﬂ oat_3> будет присоединен к D3D-буферу первого ГП.
