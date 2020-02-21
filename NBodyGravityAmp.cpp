@@ -287,8 +287,6 @@ HRESULT CreateParticleBuffer(ID3D11Device* pd3dDevice){
 }//--------------------------------------------------------------------------------------
 //  Load particles. Two clusters set to collide.
 ParticlesCpu particles(g_maxParticles);
-array_view<float_3, 1> posView(g_maxParticles);
-array_view<float_3, 1> velView(g_maxParticles);
 void LoadParticles(){
 	const float centerSpread = g_Spread * 0.50f;
 	// Create particles in CPU memory.
@@ -307,10 +305,10 @@ void LoadParticles(){
 	index<1> begin(0);
 	extent<1> end(g_maxParticles);
 	for(size_t i = 0; i < g_deviceData.size(); ++i){
-		//array_view<float_3, 1> posView = g_deviceData[i]->DataOld->pos.section(index<1>(begin), extent<1>(end));
+		array_view<float_3, 1> posView = g_deviceData[i]->DataOld->pos.section(index<1>(begin), extent<1>(end));
 		posView = g_deviceData[i]->DataOld->pos.section(index<1>(begin), extent<1>(end));
 		copy(particles.pos.begin(), posView);
-		//array_view<float_3, 1> velView = g_deviceData[i]->DataOld->vel.section(index<1>(begin), extent<1>(end));
+		array_view<float_3, 1> velView = g_deviceData[i]->DataOld->vel.section(index<1>(begin), extent<1>(end));
 		velView = g_deviceData[i]->DataOld->vel.section(index<1>(begin), extent<1>(end));
 		copy(particles.vel.begin(), velView);
 	}
@@ -439,8 +437,8 @@ void CALLBACK OnFrameMove(double fTime, float fElapsedTime, void* pUserContext){
 	// Update the camera's position based on user input 
 	g_camera.FrameMove(fElapsedTime);
 
-	copy(g_deviceData[0]->DataOld->pos, particles.pos.data());
-	int i = 100; _RPT3(0, "%f\t%f\t%f\n", particles.pos[i].x, particles.pos[i].y, particles.pos[i].z);
+	//copy(g_deviceData[0]->DataOld->pos, particles.pos.data());
+	//int i = 100; _RPT3(0, "%f\t%f\t%f\n", particles.pos[i].x, particles.pos[i].y, particles.pos[i].z);
 }//--------------------------------------------------------------------------------------
 // Before handling window messages, DXUT passes incoming windows 
 // messages to the application through this callback function. If the application sets 
