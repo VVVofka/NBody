@@ -1,8 +1,5 @@
-//===============================================================================
-//
 // Microsoft Press
 // C++ AMP: Accelerated Massive Parallelism with Microsoft Visual C++
-//
 //===============================================================================
 // Copyright (c) 2012-2013 Ade Miller & Kate Gregory.  All rights reserved.
 // This code released under the terms of the 
@@ -13,7 +10,6 @@
 //--------------------------------------------------------------------------------------
 //  Simple integration implementation.
 //--------------------------------------------------------------------------------------
-//
 //  This integrator does not specify a tiling or use tile static memory.
 
 class NBodyAmpSimple : public INBodyAmp{
@@ -31,6 +27,7 @@ public:
 		m_particleMass(particleMass){}
 
 	inline int TileSize() const{ return 1; }	//  No tiling.
+	void Load() const {}
 
 	void Integrate(const std::vector<std::shared_ptr<TaskData>>& particleData,
 				   int numParticles) const{

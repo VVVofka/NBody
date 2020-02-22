@@ -286,11 +286,12 @@ HRESULT CreateParticleBuffer(ID3D11Device* pd3dDevice) {
 	return hr;
 }//--------------------------------------------------------------------------------------
 //  Load particles. Two clusters set to collide.
-ParticlesCpu particles(g_maxParticles);
+ParticlesCpu particles(g_maxParticles);  // g_maxParticles = 58368
+
 void LoadParticles() {
 	const float centerSpread = g_Spread * 0.50f;
 	// Create particles in CPU memory.
-	//ParticlesCpu particles(g_maxParticles);
+	//ParticlesCpu particles(g_maxParticles);    // g_maxParticles = 58368
 	for (int i = 0; i < g_maxParticles; i += g_particleNumStepSize) {
 		LoadClusterParticles(particles, i, (g_particleNumStepSize / 2),
 			float_3(centerSpread, 0.0f, 0.0f),
@@ -303,8 +304,9 @@ void LoadParticles() {
 	}
 	// Copy particles to GPU memory.
 	index<1> begin(0);
-	extent<1> end(g_maxParticles);
-	for (size_t i = 0; i < g_deviceData.size(); ++i) {
+	extent<1> end(g_maxParticles);        // g_maxParticles = 58368
+	size_t iall = g_deviceData.size();    // iall = 1
+	for (size_t i = 0; i < iall; ++i) {
 		array_view<float_3, 1> posView = g_deviceData[i]->DataOld->pos.section(index<1>(begin), extent<1>(end));
 		posView = g_deviceData[i]->DataOld->pos.section(index<1>(begin), extent<1>(end));
 		copy(particles.pos.begin(), posView);
