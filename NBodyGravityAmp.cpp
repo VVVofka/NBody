@@ -85,11 +85,11 @@ int                                 g_numParticles = (20 * 1024);           // T
 #else
 int                                 g_numParticles = g_particleNumStepSize;
 #endif
+
 ComputeType                         g_eComputeType; // Default integrator compute type  = ComputeType::kSingleSimple
 std::shared_ptr<INBodyAmp>          g_pNBody;       // The current integrator
 
 //  Particle data structures.
-
 std::vector<std::shared_ptr<TaskData>> g_deviceData;
 
 //  Particle colours.
@@ -323,7 +323,7 @@ std::shared_ptr<INBodyAmp> NBodyFactory(ComputeType type) {
 			g_deltaTime, g_particleMass);
 	case kSingleMy:
 		return std::make_shared<NBodyAmpMy>(g_softeningSquared, g_dampingFactor,
-			g_deltaTime, g_particleMass);
+			g_deltaTime, g_particleMass, &g_deviceData);
 	case kSingleTile64:
 		return std::make_shared<NBodyAmpTiled<64>>(g_softeningSquared, g_dampingFactor,
 			g_deltaTime, g_particleMass);
@@ -485,7 +485,6 @@ void CALLBACK OnGUIEvent(UINT nEvent, int nControlID, CDXUTControl* pControl, vo
 
 		g_particleColor = g_particleColors[g_eComputeType];
 		g_pNBody = NBodyFactory(g_eComputeType);
-
 		CorrectNumberOfParticles();
 		SetBodyText();
 		g_FpsStatistics.clear();
