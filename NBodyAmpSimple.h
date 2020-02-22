@@ -27,7 +27,6 @@ public:
 		m_particleMass(particleMass){}
 
 	inline int TileSize() const{ return 1; }	//  No tiling.
-	void Load() const {}
 
 	void Integrate(const std::vector<std::shared_ptr<TaskData>>& particleData,
 				   int numParticles) const{

@@ -30,7 +30,6 @@ public:
 		m_engine(softeningSquared, dampingFactor, deltaTime, particleMass) {
 	}
 	inline int TileSize() const { return m_engine.TileSize(); }
-	void Load() const {}
 
 	void Integrate(const std::vector<std::shared_ptr<TaskData>>& particleData, int numParticles) const {
 		assert(particleData.size() > 1);

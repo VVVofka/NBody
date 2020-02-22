@@ -29,7 +29,6 @@ public:
 		m_particleMass(particleMass) {
 	} // //////////////////////////////////////////////////////////////////////////////////////////
 	inline int TileSize() const { return m_tileSize; }
-	void Load() const {	}
 
 	inline void Integrate(const std::vector<std::shared_ptr<TaskData>>& particleData, int numParticles) const {
 		TiledBodyBodyInteraction(*particleData[0]->DataOld, *particleData[0]->DataNew, 0, numParticles, numParticles);

@@ -22,5 +22,4 @@ public:
 	virtual void Integrate(const std::vector<std::shared_ptr<TaskData>>& particleData,
 		int numParticles) const = 0;
 
-	virtual void Load() const = 0;
 }; // **** class INBodyAmp *********************************************************************************************
