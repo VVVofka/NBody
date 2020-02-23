@@ -288,10 +288,43 @@ HRESULT CreateParticleBuffer(ID3D11Device* pd3dDevice) {
 //  Load particles. Two clusters set to collide.
 ParticlesCpu particles(g_maxParticles);  // g_maxParticles = 58368
 
-void LoadParticles() {
+void LoadParticlesNotMy() {
 	const float centerSpread = g_Spread * 0.50f;
 	// Create particles in CPU memory.
 	//ParticlesCpu particles(g_maxParticles);    // g_maxParticles = 58368
+	for (int i = 0; i < g_maxParticles; i += g_particleNumStepSize) {
+		LoadClusterParticles(
+			particles, 
+			i,                                   // offset
+			(g_particleNumStepSize / 2),         // size
+			float_3(centerSpread, 0.0f, 0.0f),   // center
+			float_3(0, 0, -20),                  // vel
+			g_Spread);                           // center
+		LoadClusterParticles(
+			particles, 
+			(i + g_particleNumStepSize / 2),     // offset
+			((g_particleNumStepSize + 1) / 2),   // size
+			float_3(-centerSpread, 0.0f, 0.0f),  // center
+			float_3(0, 0, 20),                   // vel
+			g_Spread);                           // center
+	}
+	// Copy particles to GPU memory.
+	index<1> begin(0);
+	extent<1> end(g_maxParticles);        // g_maxParticles = 58368
+	size_t iall = g_deviceData.size();    // iall = 1
+	for (size_t i = 0; i < iall; ++i) {
+		array_view<float_3, 1> posView = g_deviceData[i]->DataOld->pos.section(index<1>(begin), extent<1>(end));
+		posView = g_deviceData[i]->DataOld->pos.section(index<1>(begin), extent<1>(end));
+		copy(particles.pos.begin(), posView);
+		array_view<float_3, 1> velView = g_deviceData[i]->DataOld->vel.section(index<1>(begin), extent<1>(end));
+		velView = g_deviceData[i]->DataOld->vel.section(index<1>(begin), extent<1>(end));
+		copy(particles.vel.begin(), velView);
+	}
+} // //////////////////////////////////////////////////////////////////////////////////////
+void LoadParticlesMy() {
+	// Create particles in CPU memory.
+	//ParticlesCpu particles(g_maxParticles);    // g_maxParticles = 58368
+	const float centerSpread = g_Spread * 0.50f;
 	for (int i = 0; i < g_maxParticles; i += g_particleNumStepSize) {
 		LoadClusterParticles(particles, i, (g_particleNumStepSize / 2),
 			float_3(centerSpread, 0.0f, 0.0f),
@@ -314,6 +347,12 @@ void LoadParticles() {
 		velView = g_deviceData[i]->DataOld->vel.section(index<1>(begin), extent<1>(end));
 		copy(particles.vel.begin(), velView);
 	}
+} // //////////////////////////////////////////////////////////////////////////////////////
+void LoadParticles() {
+	if (g_pNBody->bIsMy)
+		LoadParticlesMy();
+	else
+		LoadParticlesNotMy();
 }//--------------------------------------------------------------------------------------
 //  Integrator class factory. 
 std::shared_ptr<INBodyAmp> NBodyFactory(ComputeType type) {
@@ -489,7 +528,7 @@ void CALLBACK OnGUIEvent(UINT nEvent, int nControlID, CDXUTControl* pControl, vo
 		SetBodyText();
 		g_FpsStatistics.clear();
 	}
-		break;
+							 break;
 	case IDC_NBODIES_SLIDER: {
 		CDXUTSlider* pSlider = static_cast<CDXUTSlider*>(pControl);
 		g_numParticles = pSlider->GetValue() * g_particleNumStepSize;
@@ -498,7 +537,7 @@ void CALLBACK OnGUIEvent(UINT nEvent, int nControlID, CDXUTControl* pControl, vo
 		SetBodyText();
 		g_FpsStatistics.clear();
 	}
-		break;
+						   break;
 	}
 } // //////////////////////////////////////////////////////////////////////////////////////
 // For the multi-accelerator integrator there must be at least one tile of particles per GPU.

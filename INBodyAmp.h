@@ -22,4 +22,6 @@ public:
 	virtual void Integrate(const std::vector<std::shared_ptr<TaskData>>& particleData,
 		int numParticles) const = 0;
 
+	bool bIsMy =  false;
+protected:
 }; // **** class INBodyAmp *********************************************************************************************
