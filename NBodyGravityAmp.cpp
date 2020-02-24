@@ -39,6 +39,7 @@ enum ComputeType {
 	kMultiTile512
 };//--------------------------------------------------------------------------------------
 // Global constants.
+//--------------------------------------------------------------------------------------
 const float g_softeningSquared = 0.0000015625f;
 const float g_dampingFactor = 0.9995f;
 const float g_particleMass = ((6.67300e-11f * 10000.0f) * 10000.0f * 10000.0f);
@@ -48,8 +49,10 @@ const int g_maxParticles = (57 * 1024);            // Maximum number of particle
 const int g_particleNumStepSize = 512;             // Number of particles added for each slider tick, cannot be less than the max tile size.
 
 const float g_Spread = 400.0f;                     // Separation between the two clusters.
+ParticlesCpu particles(g_maxParticles);            // g_maxParticles = 58368
 //--------------------------------------------------------------------------------------
 // Global variables
+//--------------------------------------------------------------------------------------
 CDXUTDialogResourceManager          g_dialogResourceManager;    // manager for shared resources of dialogs
 CModelViewerCamera                  g_camera;                   // A model viewing camera
 CD3DSettingsDlg                     g_d3dSettingsDlg;           // Device settings dialog
@@ -80,8 +83,9 @@ CComPtr<ID3D11Buffer>               g_pConstantBuffer;
 CComPtr<ID3D11ShaderResourceView>   g_pShaderResView;
 //--------------------------------------------------------------------------------------
 // Nbody functionality 
+//--------------------------------------------------------------------------------------
 #if !(defined(DEBUG) || defined(_DEBUG))
-int                                 g_numParticles = (20 * 1024);           // The current number of particles in the n-body simulation
+int                                 g_numParticles = (20 * 1024); // The current number of particles in the n-body simulation
 #else
 int                                 g_numParticles = g_particleNumStepSize;
 #endif
@@ -286,7 +290,6 @@ HRESULT CreateParticleBuffer(ID3D11Device* pd3dDevice) {
 	return hr;
 }//--------------------------------------------------------------------------------------
 //  Load particles. Two clusters set to collide.
-ParticlesCpu particles(g_maxParticles);  // g_maxParticles = 58368
 
 void LoadParticlesNotMy() {
 	const float centerSpread = g_Spread * 0.50f;
@@ -294,14 +297,14 @@ void LoadParticlesNotMy() {
 	//ParticlesCpu particles(g_maxParticles);    // g_maxParticles = 58368
 	for (int i = 0; i < g_maxParticles; i += g_particleNumStepSize) {
 		LoadClusterParticles(
-			particles, 
+			particles,
 			i,                                   // offset
 			(g_particleNumStepSize / 2),         // size
 			float_3(centerSpread, 0.0f, 0.0f),   // center
 			float_3(0, 0, -20),                  // vel
 			g_Spread);                           // center
 		LoadClusterParticles(
-			particles, 
+			particles,
 			(i + g_particleNumStepSize / 2),     // offset
 			((g_particleNumStepSize + 1) / 2),   // size
 			float_3(-centerSpread, 0.0f, 0.0f),  // center
@@ -326,10 +329,9 @@ void LoadParticlesMy() {
 	//ParticlesCpu particles(g_maxParticles);    // g_maxParticles = 58368
 	const float centerSpread = g_Spread * 0.50f;
 	for (int i = 0; i < g_maxParticles; i += g_particleNumStepSize) {
-		LoadClusterParticles(particles, i, (g_particleNumStepSize / 2),
-			float_3(centerSpread, 0.0f, 0.0f),
-			float_3(0, 0, -20),
-			g_Spread);
+		LoadClusterParticlesMy(particles,
+			float_3(200.0f, 200.0f, 200.0f) // center
+		);
 		LoadClusterParticles(particles, (i + g_particleNumStepSize / 2), ((g_particleNumStepSize + 1) / 2),
 			float_3(-centerSpread, 0.0f, 0.0f),
 			float_3(0, 0, 20),

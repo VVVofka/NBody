@@ -21,7 +21,6 @@ using namespace concurrency::graphics;
 //--------------------------------------------------------------------------------------
 //  Particle data structures.
 //--------------------------------------------------------------------------------------
-
 //  Data structure for storing particles on the CPU. Used during data initialization, which is
 //  executed on the CPU. Also used for swapping partial results between multiple accelerators.
 //
@@ -136,5 +135,18 @@ void LoadClusterParticles(ParticlesCpu& particles, int offset, int size, float_3
 		particles.pos[i] = center + delta;
 		//_RPT3(0, "%f\t%f\t%f\n", particles.pos[i].x, particles.pos[i].y, particles.pos[i].z);
 		particles.vel[i] = velocity;
+	};
+} // /////////////// LoadClusterParticles()  ////////////////////////////////////////////////////
+void LoadClusterParticlesMy(ParticlesCpu& particles, float_3 center) {
+	std::random_device rd;
+	std::default_random_engine engine(rd());
+	std::uniform_real_distribution<float> randRadius(0.0f, 100.0f);
+	std::uniform_real_distribution<float> randTheta(-1.0f, 1.0f);
+	std::uniform_real_distribution<float> randPhi(0.0f, 2.0f * static_cast<float>(std::_Pi));
+
+	for (int i = 0; i < particles.size(); ++i) {
+		float_3 delta = PolarToCartesian(randRadius(engine), acos(randTheta(engine)), randPhi(engine));
+		particles.pos[i] = center + delta;
+		particles.vel[i] = float_3();
 	};
 } // /////////////// LoadClusterParticles()  ////////////////////////////////////////////////////
