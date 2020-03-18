@@ -1,4 +1,4 @@
-// C++ AMP: Accelerated Massive Parallelism with Microsoft Visual C++
+﻿// C++ AMP: Accelerated Massive Parallelism with Microsoft Visual C++
 // Copyright (c) 2012-2013 Ade Miller & Kate Gregory.  All rights reserved.
 // Microsoft Public License (Ms-PL), http://ampbook.codeplex.com/license.
 //===============================================================================
@@ -88,6 +88,7 @@ CComPtr<ID3D11ShaderResourceView>   g_pShaderResView;
 int                                 g_numParticles = (20 * 1024); // The current number of particles in the n-body simulation
 #else
 int                                 g_numParticles = g_particleNumStepSize;
+//int                                 g_numParticles = 512 * 16;
 #endif
 
 ComputeType                         g_eComputeType; // Default integrator compute type  = ComputeType::kSingleSimple
@@ -242,6 +243,7 @@ void InitApp() {
 	pComboBox->SetSelectedByIndex(g_eComputeType);
 
 	g_HUD.GetSlider(IDC_NBODIES_SLIDER)->SetValue((g_numParticles / g_particleNumStepSize));
+	g_HUD.GetSlider(IDC_NBODIES_SLIDER)->SetValue((g_numParticles / g_particleNumStepSize));
 	g_particleColors.resize(kMultiTile512 + 1);
 	g_particleColors[kSingleSimple] = D3DXCOLOR(0.05f, 1.0f, 0.05f, 1.0f);
 	g_particleColors[kSingleMy] = D3DXCOLOR(0.05f, 0.7f, 0.7f, 1.0f);
@@ -332,10 +334,6 @@ void LoadParticlesMy() {
 		LoadClusterParticlesMy(particles,
 			float_3(200.0f, 200.0f, 200.0f) // center
 		);
-		LoadClusterParticles(particles, (i + g_particleNumStepSize / 2), ((g_particleNumStepSize + 1) / 2),
-			float_3(-centerSpread, 0.0f, 0.0f),
-			float_3(0, 0, 20),
-			g_Spread);
 	}
 	// Copy particles to GPU memory.
 	index<1> begin(0);
@@ -468,7 +466,7 @@ bool CALLBACK ModifyDeviceSettings(DXUTDeviceSettings* pDeviceSettings, void* pU
 // intended to contain actual rendering calls, which should instead be placed in the 
 // OnFrameRender callback.  
 void CALLBACK OnFrameMove(double fTime, float fElapsedTime, void* pUserContext) {
-	g_pNBody->Integrate(g_deviceData, g_numParticles);
+	g_pNBody->Integrate(g_deviceData, g_numParticles);     // g_numParticles = 512
 	std::for_each(g_deviceData.begin(), g_deviceData.end(), [](std::shared_ptr<TaskData>& t) {
 		std::swap(t->DataOld, t->DataNew);
 		});
@@ -479,7 +477,7 @@ void CALLBACK OnFrameMove(double fTime, float fElapsedTime, void* pUserContext) 
 	// Update the camera's position based on user input 
 	g_camera.FrameMove(fElapsedTime);
 
-	//copy(g_deviceData[0]->DataOld->pos, particles.pos.data());
+	copy(g_deviceData[0]->DataOld->pos, particles.pos.data());
 	//int i = 100; _RPT3(0, "%f\t%f\t%f\n", particles.pos[i].x, particles.pos[i].y, particles.pos[i].z);
 }//--------------------------------------------------------------------------------------
 // Before handling window messages, DXUT passes incoming windows 
@@ -657,8 +655,14 @@ HRESULT CALLBACK OnD3D11CreateDevice(ID3D11Device* pd3dDevice, const DXGI_SURFAC
 	g_camera.SetViewParams(&vecEye, &vecAt);
 	return S_OK;
 } // //////////////////////////////////////////////////////////////////////////////////////////////////////////
-HRESULT CALLBACK OnD3D11ResizedSwapChain(ID3D11Device* pd3dDevice, IDXGISwapChain* pSwapChain,
-	const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc, void* pUserContext) {
+HRESULT CALLBACK OnD3D11ResizedSwapChain(
+	ID3D11Device* pd3dDevice,
+	IDXGISwapChain* pSwapChain, // IDXGISwapChain понадобилось для работы с буферами рисования и выводом нарисованного на экран.
+	//В любой программе будет присутствовать объект IDXGISwapChain, содержащий как минимум два буфера – 
+	//задний (back buffer) и передний (front buffer). Передний буфер – это экран, точнее его часть внутри нашего окна. 
+	//На заднем буфере мы в DirectX отрисовываем сцену, и, когда она готова, мы вызываем функцию g_pSwapChain->Present(…)
+	const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc,
+	void* pUserContext) {
 	HRESULT hr = S_OK;
 
 	V_RETURN(g_dialogResourceManager.OnD3D11ResizedSwapChain(pd3dDevice, pBackBufferSurfaceDesc));
@@ -759,7 +763,7 @@ void CALLBACK OnD3D11FrameRender(ID3D11Device* pd3dDevice, ID3D11DeviceContext* 
 		return;
 	}
 	const float clearColor[4] = { 0.0, 0.0, 0.0, 0.0 };
-	ID3D11RenderTargetView* pRTV = DXUTGetD3D11RenderTargetView();
+	ID3D11RenderTargetView* pRTV = DXUTGetD3D11RenderTargetView(); //объект нашего заднего буфера, в котором мы будем рисовать свой трехмерный мир
 	pd3dImmediateContext->ClearRenderTargetView(pRTV, clearColor);
 	ID3D11DepthStencilView* pDSV = DXUTGetD3D11DepthStencilView();
 	pd3dImmediateContext->ClearDepthStencilView(pDSV, D3D11_CLEAR_DEPTH, 1.0, 0);

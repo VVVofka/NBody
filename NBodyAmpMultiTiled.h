@@ -31,7 +31,9 @@ public:
 	}
 	inline int TileSize() const { return m_engine.TileSize(); }
 
-	void Integrate(const std::vector<std::shared_ptr<TaskData>>& particleData, int numParticles) const {
+	void Integrate(const std::vector<std::shared_ptr<TaskData>>& particleData, 
+		int numParticles      // g_numParticles = 512
+	) const {
 		assert(particleData.size() > 1);
 
 		const int tileSize = m_engine.TileSize();

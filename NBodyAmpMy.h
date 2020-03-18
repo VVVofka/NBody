@@ -16,7 +16,7 @@ public:
 	NBodyAmpMy(float softeningSquared,
 		float dampingFactor,
 		float deltaTime,
-		float particleMass, 
+		float particleMass,
 		std::vector<std::shared_ptr<TaskData>>* pgdData
 	) :
 		m_softeningSquared(softeningSquared),
@@ -30,12 +30,14 @@ public:
 	inline int TileSize() const { return 1; }   //  No tiling.
 
 	void Integrate(const std::vector<std::shared_ptr<TaskData>>& particleData,
-		int numParticles) const {
+		int numParticles      // g_numParticles = 512
+	) const {
 		assert(numParticles > 0);              // 512
 		assert((numParticles % 4) == 0);
 
 		ParticlesAmp particlesIn = *particleData[0]->DataOld;
 		ParticlesAmp particlesOut = *particleData[0]->DataNew;
+		return;
 
 		extent<1> computeDomain(numParticles);
 		const float softeningSquared = m_softeningSquared;

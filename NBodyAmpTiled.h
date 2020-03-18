@@ -30,7 +30,10 @@ public:
 	} // //////////////////////////////////////////////////////////////////////////////////////////
 	inline int TileSize() const { return m_tileSize; }
 
-	inline void Integrate(const std::vector<std::shared_ptr<TaskData>>& particleData, int numParticles) const {
+	inline void Integrate(
+		const std::vector<std::shared_ptr<TaskData>>& particleData, 
+		int numParticles      // g_numParticles = 512
+	) const {
 		TiledBodyBodyInteraction(*particleData[0]->DataOld, *particleData[0]->DataNew, 0, numParticles, numParticles);
 	} // ///////////////////////////////////////////////////////////////////////////////////////////////////////////////	
 	//  Calculate interactions for a subset of particles in particlesIn, [rangeStart, rangeStart + rangeSize)

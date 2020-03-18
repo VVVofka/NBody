@@ -140,10 +140,10 @@ void LoadClusterParticles(ParticlesCpu& particles, int offset, int size, float_3
 void LoadClusterParticlesMy(ParticlesCpu& particles, float_3 center) {
 	std::random_device rd;
 	std::default_random_engine engine(rd());
-	std::uniform_real_distribution<float> randRadius(0.0f, 100.0f);
+	std::uniform_real_distribution<float> randRadius(0.0f, 800.0f);
 	std::uniform_real_distribution<float> randTheta(-1.0f, 1.0f);
 	std::uniform_real_distribution<float> randPhi(0.0f, 2.0f * static_cast<float>(std::_Pi));
-
+	//return;
 	for (int i = 0; i < particles.size(); ++i) {
 		float_3 delta = PolarToCartesian(randRadius(engine), acos(randTheta(engine)), randPhi(engine));
 		particles.pos[i] = center + delta;
